@@ -3,7 +3,6 @@
     "id": "p1",
     "name": "김용걸",
     "back_number": 10,
-    "department": "체육진흥과",
     "position": "CAM",
     "secondary_positions": [
       "CM",
@@ -32,7 +31,6 @@
     "id": "p2",
     "name": "박준혁",
     "back_number": 9,
-    "department": "일자리경제과",
     "position": "ST",
     "secondary_positions": [
       "RW"
@@ -60,7 +58,6 @@
     "id": "p3",
     "name": "이민재",
     "back_number": 7,
-    "department": "도시계획과",
     "position": "LW",
     "secondary_positions": [
       "RW",
@@ -89,7 +86,6 @@
     "id": "p4",
     "name": "정현우",
     "back_number": 11,
-    "department": "교통혁신과",
     "position": "RW",
     "secondary_positions": [
       "LW",
@@ -118,7 +114,6 @@
     "id": "p5",
     "name": "강동진",
     "back_number": 8,
-    "department": "총무과",
     "position": "CM",
     "secondary_positions": [
       "CAM",
@@ -147,7 +142,6 @@
     "id": "p6",
     "name": "최성호",
     "back_number": 6,
-    "department": "안전총괄과",
     "position": "CDM",
     "secondary_positions": [
       "CB",
@@ -176,7 +170,6 @@
     "id": "p7",
     "name": "조승원",
     "back_number": 3,
-    "department": "환경정책과",
     "position": "LB",
     "secondary_positions": [
       "LWB",
@@ -205,7 +198,6 @@
     "id": "p8",
     "name": "윤태식",
     "back_number": 4,
-    "department": "건설행정과",
     "position": "CB",
     "secondary_positions": [
       "CDM"
@@ -233,7 +225,6 @@
     "id": "p9",
     "name": "서지훈",
     "back_number": 5,
-    "department": "감사위원회",
     "position": "CB",
     "secondary_positions": [
       "RB"
@@ -261,7 +252,6 @@
     "id": "p10",
     "name": "한상우",
     "back_number": 2,
-    "department": "스마트도시과",
     "position": "RB",
     "secondary_positions": [
       "RWB",
@@ -290,7 +280,6 @@
     "id": "p11",
     "name": "오세범",
     "back_number": 1,
-    "department": "재난대응과",
     "position": "GK",
     "secondary_positions": [],
     "foot": "오른발",
@@ -314,7 +303,6 @@
     "id": "p12",
     "name": "문경호",
     "back_number": 18,
-    "department": "복지정책과",
     "position": "ST",
     "secondary_positions": [
       "CAM"
@@ -342,7 +330,6 @@
     "id": "p13",
     "name": "배성민",
     "back_number": 14,
-    "department": "문화예술과",
     "position": "CM",
     "secondary_positions": [
       "LM",
@@ -371,7 +358,6 @@
     "id": "p14",
     "name": "송치원",
     "back_number": 16,
-    "department": "해양수산과",
     "position": "CDM",
     "secondary_positions": [
       "CB"
@@ -399,7 +385,6 @@
     "id": "p15",
     "name": "임재현",
     "back_number": 20,
-    "department": "공원여가정책과",
     "position": "CB",
     "secondary_positions": [
       "LB",
@@ -428,7 +413,6 @@
     "id": "p16",
     "name": "유도훈",
     "back_number": 17,
-    "department": "세정과",
     "position": "LW",
     "secondary_positions": [
       "LB"
@@ -456,7 +440,6 @@
     "id": "p17",
     "name": "권영진",
     "back_number": 19,
-    "department": "디지털경제혁신실",
     "position": "RB",
     "secondary_positions": [
       "RWB"
@@ -484,7 +467,6 @@
     "id": "p18",
     "name": "신동엽",
     "back_number": 21,
-    "department": "관광마이스과",
     "position": "GK",
     "secondary_positions": [],
     "foot": "오른발",

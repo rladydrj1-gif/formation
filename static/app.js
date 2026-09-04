@@ -54,7 +54,6 @@ const cardOvr = document.getElementById('cardOvr');
 const cardPos = document.getElementById('cardPos');
 const cardMultiPos = document.getElementById('cardMultiPos');
 const cardName = document.getElementById('cardName');
-const cardDept = document.getElementById('cardDept');
 const cardNumber = document.getElementById('cardNumber');
 const cardTotalScore = document.getElementById('cardTotalScore');
 const cStatPac = document.getElementById('cStatPac');
@@ -487,7 +486,6 @@ function renderInspector() {
     cardMultiPos.textContent = subPositions.length > 0 ? subPositions.join(' / ') : '단일 포지션';
 
     cardName.textContent = selectedPlayer.name || '선수';
-    cardDept.textContent = selectedPlayer.department || '부산시청';
     cardNumber.textContent = `#${selectedPlayer.back_number || 0}`;
 
     const total = calcPlayerTotal(selectedPlayer);
@@ -530,7 +528,7 @@ function renderSquadList() {
     squadListContainer.innerHTML = '';
 
     const filtered = players.filter(p => {
-        const matchesQuery = !query || p.name.toLowerCase().includes(query) || p.department.toLowerCase().includes(query);
+        const matchesQuery = !query || p.name.toLowerCase().includes(query) || (p.back_number && String(p.back_number).includes(query));
         let matchesFilter = true;
         const posArr = p.positions || [p.position];
         if (activeFilter === 'FW') matchesFilter = posArr.some(pos => ['ST', 'CF', 'LW', 'RW'].includes(pos));
@@ -558,7 +556,7 @@ function renderSquadList() {
                 <span class="squad-item-num">#${p.back_number}</span>
                 <div class="squad-item-info">
                     <span class="squad-item-name">${p.name}</span>
-                    <span class="squad-item-dept">${p.department} (${posDisplay})</span>
+                    <span class="squad-item-dept">${p.age}세 · ${p.foot} (${posDisplay})</span>
                 </div>
             </div>
             <div class="squad-item-right">
@@ -701,7 +699,7 @@ function openSlotSelectModal(slot) {
             <div>
                 <span class="badge ${posClass}" style="padding:2px 5px;border-radius:3px;font-size:9px;color:#fff;">${posDisplay}</span>
                 <strong style="margin-left:5px;font-size:12px;color:#fff;">#${p.back_number} ${p.name}</strong>
-                <span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(${p.department})</span>
+                <span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(${p.age}세, ${p.foot})</span>
                 ${isNatural ? '<span style="color:#2ecc71;font-size:10px;font-weight:bold;margin-left:4px;">[포지션 일치]</span>' : ''}
                 ${isCurrent ? '<span style="color:var(--accent-gold);font-size:10px;font-weight:bold;margin-left:4px;">[현재 배치됨]</span>' : ''}
             </div>
@@ -791,7 +789,6 @@ function openPlayerModal(playerToEdit = null) {
         document.getElementById('formPlayerId').value = playerToEdit.id;
         document.getElementById('formBackNumber').value = playerToEdit.back_number;
         document.getElementById('formName').value = playerToEdit.name;
-        document.getElementById('formDepartment').value = playerToEdit.department;
         document.getElementById('formAge').value = playerToEdit.age || 30;
         document.getElementById('formFoot').value = playerToEdit.foot || '오른발';
         document.getElementById('formNotes').value = playerToEdit.notes || '';
@@ -934,7 +931,6 @@ function setupEventListeners() {
             id: playerId || null,
             back_number: parseInt(document.getElementById('formBackNumber').value),
             name: document.getElementById('formName').value.trim(),
-            department: document.getElementById('formDepartment').value.trim(),
             age: parseInt(document.getElementById('formAge').value),
             positions: positions,
             position: positions[0] || 'CM',

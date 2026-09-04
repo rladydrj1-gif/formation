@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.worksheet.datavalidation import DataValidation
 
 def get_base_dir():
     if getattr(sys, 'frozen', False):
@@ -104,6 +105,7 @@ def load_players():
                 else:
                     p['positions'] = normalize_positions(p['positions'], pos)
                 p['position'] = p['positions'][0]
+                p.pop('department', None)
                 s = p.get('stats', {})
                 if 'total_score' not in p:
                     p['total_score'] = sum([s.get('pac', 70), s.get('sho', 70), s.get('pas', 70), s.get('dri', 70), s.get('def', 70), s.get('phy', 70)])
@@ -112,6 +114,8 @@ def load_players():
         return []
 
 def save_players(players):
+    for p in players:
+        p.pop('department', None)
     with open(PLAYERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(players, f, ensure_ascii=False, indent=2)
 
@@ -128,7 +132,6 @@ def save_tactics(tactics):
     with open(TACTICS_FILE, 'w', encoding='utf-8') as f:
         json.dump(tactics, f, ensure_ascii=False, indent=2)
 
-# AI Lineup Recommendation Algorithm
 def calculate_ai_lineup(formation_key):
     tactics = load_tactics()
     players = load_players()
@@ -143,8 +146,6 @@ def calculate_ai_lineup(formation_key):
     def get_slot_score(p, role):
         pos_list = p.get('positions', [p.get('position', 'CM')])
         ovr = p.get('ovr', 75)
-        stats = p.get('stats', {})
-
         if role in pos_list:
             idx = pos_list.index(role)
             pos_mult = 1.10 if idx == 0 else (1.05 if idx == 1 else 1.02)
@@ -209,6 +210,7 @@ def get_players():
 @app.route('/api/players', methods=['POST'])
 def save_player():
     data = request.json
+    data.pop('department', None)
     players = load_players()
 
     player_id = data.get('id')
@@ -299,16 +301,16 @@ def export_excel():
     ws = wb.active
     ws.title = '선수단_명단_입력양식'
 
-    ws.merge_cells('A1:R1')
+    ws.merge_cells('A1:Q1')
     title_cell = ws['A1']
-    title_cell.value = '★ 부산시청 축구회 선수단 명단 및 FIFA 6대 능력치 입력 양식 (J~O열 점수 입력시 P열 총점/Q열 OVR 자동 계산, 포지션 최대 3개) ★'
+    title_cell.value = '★ 부산시청 축구회 선수단 명단 및 능력치 입력 양식 (포지션: 드롭박스 선택 / I~N열 점수 입력시 O열 총점 및 P열 OVR 자동 계산) ★'
     title_cell.font = Font(name='맑은 고딕', size=11, bold=True, color='FFFFFF')
     title_cell.fill = PatternFill(start_color='0C2D48', end_color='0C2D48', fill_type='solid')
     title_cell.alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[1].height = 28
 
     headers = [
-        '선수ID', '등번호', '이름', '소속부서', '나이',
+        '선수ID', '등번호', '이름', '나이',
         '주포지션(1순위)', '부포지션(2순위)', '부포지션(3순위)', '주발',
         'PAC(주력)', 'SHO(슈팅)', 'PAS(패스)', 'DRI(드리블)', 'DEF(수비)', 'PHY(피지컬)',
         '총점(6개합계)', '종합평점(OVR)', '선수특징/메모'
@@ -335,9 +337,10 @@ def export_excel():
     for col_idx in range(1, len(headers) + 1):
         cell = ws.cell(row=2, column=col_idx)
         cell.font = header_font
-        cell.fill = total_hdr_fill if col_idx in [16, 17] else header_fill
+        cell.fill = total_hdr_fill if col_idx in [15, 16] else header_fill
         cell.alignment = center_align
 
+    # Add Player Rows
     for idx, p in enumerate(players):
         row_num = idx + 3
         stats = p.get('stats', {})
@@ -350,7 +353,6 @@ def export_excel():
             p.get('id', f'p{idx+1}'),
             p.get('back_number', idx + 1),
             p.get('name', ''),
-            p.get('department', ''),
             p.get('age', 30),
             p1, p2, p3,
             p.get('foot', '오른발'),
@@ -360,8 +362,8 @@ def export_excel():
             stats.get('dri', 70),
             stats.get('def', 70),
             stats.get('phy', 70),
-            f'=SUM(J{row_num}:O{row_num})',
-            f'=ROUND(AVERAGE(J{row_num}:O{row_num}), 0)',
+            f'=SUM(I{row_num}:N{row_num})',
+            f'=ROUND(AVERAGE(I{row_num}:N{row_num}), 0)',
             p.get('notes', '')
         ]
         ws.append(row)
@@ -369,23 +371,23 @@ def export_excel():
 
         for col_idx in range(1, len(headers) + 1):
             cell = ws.cell(row=row_num, column=col_idx)
-            cell.font = bold_font if col_idx in [2, 3, 16, 17] else data_font
+            cell.font = bold_font if col_idx in [2, 3, 15, 16] else data_font
             cell.border = thin_border
-            if col_idx in [16, 17]:
+            if col_idx in [15, 16]:
                 cell.fill = total_cell_fill
-            cell.alignment = left_align if col_idx in [3, 4, 18] else center_align
+            cell.alignment = left_align if col_idx in [3, 17] else center_align
 
-    # Add 20 extra blank rows with formulas
+    # Add 25 blank rows with formulas for new players
     start_blank = len(players) + 3
-    for i in range(20):
+    for i in range(25):
         row_num = start_blank + i
         row = [
             f'p_new_{i+1}',
-            '', '', '', '',
+            '', '', '',
             'CM', '', '', '오른발',
             '', '', '', '', '', '',
-            f'=IF(COUNT(J{row_num}:O{row_num})>0, SUM(J{row_num}:O{row_num}), "")',
-            f'=IF(COUNT(J{row_num}:O{row_num})>0, ROUND(AVERAGE(J{row_num}:O{row_num}), 0), "")',
+            f'=IF(COUNT(I{row_num}:N{row_num})>0, SUM(I{row_num}:N{row_num}), "")',
+            f'=IF(COUNT(I{row_num}:N{row_num})>0, ROUND(AVERAGE(I{row_num}:N{row_num}), 0), "")',
             ''
         ]
         ws.append(row)
@@ -394,15 +396,24 @@ def export_excel():
             cell = ws.cell(row=row_num, column=col_idx)
             cell.font = data_font
             cell.border = thin_border
-            if col_idx in [16, 17]:
+            if col_idx in [15, 16]:
                 cell.fill = total_cell_fill
-            cell.alignment = left_align if col_idx in [3, 4, 18] else center_align
+            cell.alignment = left_align if col_idx in [3, 17] else center_align
+
+    # Dropdown validations (DataValidation)
+    dv_pos = DataValidation(type='list', formula1='"ST,LW,RW,CAM,CM,CDM,LB,CB,RB,GK"', allow_blank=True)
+    ws.add_data_validation(dv_pos)
+    dv_pos.add(f'E3:G{start_blank + 24}')
+
+    dv_foot = DataValidation(type='list', formula1='"오른발,왼발,양발"', allow_blank=True)
+    ws.add_data_validation(dv_foot)
+    dv_foot.add(f'H3:H{start_blank + 24}')
 
     column_widths = {
-        'A': 10, 'B': 8, 'C': 12, 'D': 16, 'E': 8,
-        'F': 14, 'G': 14, 'H': 14, 'I': 10,
-        'J': 12, 'K': 12, 'L': 12, 'M': 12, 'N': 12, 'O': 12,
-        'P': 15, 'Q': 14, 'R': 35
+        'A': 10, 'B': 8, 'C': 12, 'D': 8,
+        'E': 15, 'F': 15, 'G': 15, 'H': 10,
+        'I': 12, 'J': 12, 'K': 12, 'L': 12, 'M': 12, 'N': 12,
+        'O': 15, 'P': 14, 'Q': 35
     }
     for col_letter, width in column_widths.items():
         ws.column_dimensions[col_letter].width = width
@@ -427,10 +438,8 @@ def import_excel():
         return jsonify({'success': False, 'error': '선택된 파일이 없습니다.'}), 400
 
     try:
-        # Load workbook with openpyxl or pandas
-        df = pd.read_excel(file, header=1)  # header on row 2 (index 1)
+        df = pd.read_excel(file, header=1)
         if '이름' not in df.columns:
-            # fallback to header=0
             file.seek(0)
             df = pd.read_excel(file, header=0)
 
@@ -440,7 +449,6 @@ def import_excel():
             if not name or name == 'nan' or '★' in name:
                 continue
 
-            # Read up to 3 positions
             pos1 = str(row.get('주포지션(1순위)', row.get('주포지션', 'CM'))).strip().upper()
             pos2 = str(row.get('부포지션(2순위)', '')).strip().upper()
             pos3 = str(row.get('부포지션(3순위)', '')).strip().upper()
@@ -475,7 +483,6 @@ def import_excel():
                 'id': pid,
                 'back_number': int(row.get('등번호', idx + 1)) if pd.notna(row.get('등번호')) else idx + 1,
                 'name': name,
-                'department': str(row.get('소속부서', '부산시청')).strip() if pd.notna(row.get('소속부서')) else '부산시청',
                 'age': int(row.get('나이', 30)) if pd.notna(row.get('나이')) else 30,
                 'positions': positions,
                 'position': primary_pos,
