@@ -62,9 +62,11 @@ def init_files():
 
 init_files()
 
+static_dir = os.path.join(BASE_DIR, 'public' if os.path.exists(os.path.join(BASE_DIR, 'public')) else 'static')
 app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
-            static_folder=os.path.join(BASE_DIR, 'static'))
+            static_folder=static_dir,
+            static_url_path='/static')
 app.config['SECRET_KEY'] = 'busan_fc_formation_secret_2026'
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
