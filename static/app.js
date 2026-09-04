@@ -101,6 +101,140 @@ const excelFileInput = document.getElementById('excelFileInput');
 const btnResetDefault = document.getElementById('btnResetDefault');
 const btnClearLineup = document.getElementById('btnClearLineup');
 
+// 실시간 협업 요소
+const liveStatusPill = document.getElementById('liveStatusPill');
+const liveStatusText = document.getElementById('liveStatusText');
+const currentNicknameEl = document.getElementById('currentNickname');
+const btnSetNickname = document.getElementById('btnSetNickname');
+const btnShareLink = document.getElementById('btnShareLink');
+const shareModal = document.getElementById('shareModal');
+const btnCloseShareModal = document.getElementById('btnCloseShareModal');
+const btnCloseShareModal2 = document.getElementById('btnCloseShareModal2');
+const shareNetworkUrl = document.getElementById('shareNetworkUrl');
+const shareLocalUrl = document.getElementById('shareLocalUrl');
+const btnCopyNetworkUrl = document.getElementById('btnCopyNetworkUrl');
+const btnCopyLocalUrl = document.getElementById('btnCopyLocalUrl');
+const toastContainer = document.getElementById('toastContainer');
+
+let coachNickname = localStorage.getItem('fc_coach_nickname') || '감독';
+let socket = null;
+
+function showToast(message, type = 'info') {
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type}`;
+    toast.innerHTML = `<span>${message}</span>`;
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
+function initSocket() {
+    if (typeof io === 'undefined') {
+        console.warn('Socket.IO 라이브러리가 로드되지 않아 오프라인 모드로 동작합니다.');
+        return;
+    }
+
+    try {
+        socket = io();
+
+        socket.on('connect', () => {
+            const dot = liveStatusPill?.querySelector('.status-dot');
+            if (dot) dot.className = 'status-dot online';
+            if (liveStatusText) liveStatusText.textContent = '실시간 연결됨 (온라인)';
+        });
+
+        socket.on('disconnect', () => {
+            const dot = liveStatusPill?.querySelector('.status-dot');
+            if (dot) dot.className = 'status-dot offline';
+            if (liveStatusText) liveStatusText.textContent = '연결 끊김 (재접속 중)';
+        });
+
+        socket.on('users_count', (data) => {
+            if (liveStatusText) liveStatusText.textContent = `실시간 동기화 (${data.count}명 접속)`;
+        });
+
+        socket.on('sync_state', (data) => {
+            if (data.players) players = data.players;
+            if (data.tactics) tactics = data.tactics;
+            if (data.users_count && liveStatusText) {
+                liveStatusText.textContent = `실시간 동기화 (${data.users_count}명 접속)`;
+            }
+            if (!selectedPlayer && players.length > 0) {
+                selectedPlayer = players[0];
+            }
+            renderAll();
+        });
+
+        socket.on('player_updated', (data) => {
+            const p = data.player;
+            if (!p) return;
+            const idx = players.findIndex(item => item.id === p.id);
+            if (idx !== -1) {
+                players[idx] = p;
+            } else {
+                players.push(p);
+            }
+
+            if (selectedPlayer && selectedPlayer.id === p.id) {
+                selectedPlayer = p;
+            }
+
+            renderAll();
+
+            const editor = data.editor || '동료 코치';
+            if (editor !== coachNickname) {
+                showToast(`⚡ [${editor}]님이 <strong>${p.name}</strong> 선수의 점수를 실시간 수정했습니다!`, 'info');
+            }
+        });
+
+        socket.on('player_deleted', (data) => {
+            const pId = data.player_id;
+            players = players.filter(p => p.id !== pId);
+            if (selectedPlayer && selectedPlayer.id === pId) {
+                selectedPlayer = players[0] || null;
+            }
+            renderAll();
+
+            const editor = data.editor || '동료 코치';
+            if (editor !== coachNickname) {
+                showToast(`🗑️ [${editor}]님이 <strong>${data.player_name || '선수'}</strong>를 명단에서 삭제했습니다.`, 'warning');
+            }
+        });
+
+        socket.on('tactics_updated', (data) => {
+            if (data.tactics) {
+                tactics = data.tactics;
+                if (formationSelect) formationSelect.value = tactics.currentFormation || '4-3-3';
+                if (currentFormationLabel) currentFormationLabel.textContent = tactics.currentFormation || '4-3-3';
+                renderAll();
+
+                const editor = data.editor || '동료 코치';
+                if (editor !== coachNickname) {
+                    showToast(`📋 [${editor}]님이 라인업/포메이션을 변경했습니다.`, 'info');
+                }
+            }
+        });
+
+        socket.on('players_imported', (data) => {
+            if (data.players) players = data.players;
+            if (data.tactics) tactics = data.tactics;
+            if (players.length > 0) selectedPlayer = players[0];
+            renderAll();
+
+            const editor = data.editor || '동료 코치';
+            if (editor !== coachNickname) {
+                showToast(`📥 [${editor}]님이 엑셀 명단을 일괄 업데이트했습니다 (${data.count || players.length}명).`, 'info');
+            }
+        });
+    } catch (e) {
+        console.error('Socket init error:', e);
+    }
+}
+
 // 슬라이더 및 포지션 요소
 const formPos1 = document.getElementById('formPos1');
 const formPos2 = document.getElementById('formPos2');
@@ -179,6 +313,7 @@ async function initApp() {
     initRadarChart();
     await loadData();
     setupEventListeners();
+    initSocket();
 }
 
 async function loadData() {
@@ -732,7 +867,10 @@ async function saveTacticsToServer() {
     try {
         await fetch('/api/tactics', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Editor-Name': encodeURIComponent(coachNickname)
+            },
             body: JSON.stringify(tactics)
         });
     } catch (err) {
@@ -943,7 +1081,10 @@ function setupEventListeners() {
         try {
             const res = await fetch('/api/players', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Editor-Name': encodeURIComponent(coachNickname)
+                },
                 body: JSON.stringify(payload)
             });
             const result = await res.json();
@@ -1003,6 +1144,9 @@ function setupEventListeners() {
         try {
             const res = await fetch('/api/import-excel', {
                 method: 'POST',
+                headers: {
+                    'X-Editor-Name': encodeURIComponent(coachNickname)
+                },
                 body: formData
             });
             const data = await res.json();
@@ -1022,7 +1166,12 @@ function setupEventListeners() {
     btnResetDefault.addEventListener('click', async () => {
         if (confirm('초기 부산시청 선수단 18명 및 기본 포메이션으로 복원하시겠습니까?\\n(현재 수정한 데이터가 기본값으로 덮어씌워집니다)')) {
             try {
-                const res = await fetch('/api/reset-default', { method: 'POST' });
+                const res = await fetch('/api/reset-default', {
+                    method: 'POST',
+                    headers: {
+                        'X-Editor-Name': encodeURIComponent(coachNickname)
+                    }
+                });
                 const data = await res.json();
                 if (data.success) {
                     await loadData();
@@ -1031,6 +1180,51 @@ function setupEventListeners() {
             } catch (err) {
                 alert('초기화 실패');
             }
+        }
+    });
+
+    // 실시간 협업 닉네임 & 접속 공유 이벤트
+    if (currentNicknameEl) currentNicknameEl.textContent = coachNickname;
+
+    btnSetNickname?.addEventListener('click', () => {
+        const name = prompt('실시간 협업 시 표시할 내 호칭/닉네임을 입력하세요:', coachNickname);
+        if (name && name.trim()) {
+            coachNickname = name.trim();
+            localStorage.setItem('fc_coach_nickname', coachNickname);
+            if (currentNicknameEl) currentNicknameEl.textContent = coachNickname;
+            showToast(`내 호칭이 [${coachNickname}]으로 변경되었습니다.`, 'info');
+        }
+    });
+
+    btnShareLink?.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/server-info');
+            const data = await res.json();
+            if (shareNetworkUrl) shareNetworkUrl.value = data.network_url;
+            if (shareLocalUrl) shareLocalUrl.value = data.local_url;
+        } catch (e) {
+            if (shareNetworkUrl) shareNetworkUrl.value = window.location.href;
+            if (shareLocalUrl) shareLocalUrl.value = window.location.origin;
+        }
+        if (shareModal) shareModal.style.display = 'flex';
+    });
+
+    btnCloseShareModal?.addEventListener('click', () => { if (shareModal) shareModal.style.display = 'none'; });
+    btnCloseShareModal2?.addEventListener('click', () => { if (shareModal) shareModal.style.display = 'none'; });
+
+    btnCopyNetworkUrl?.addEventListener('click', () => {
+        if (shareNetworkUrl && shareNetworkUrl.value) {
+            navigator.clipboard.writeText(shareNetworkUrl.value).then(() => {
+                showToast('📋 동료 접속 네트워크 주소가 복사되었습니다! 카톡이나 메신저로 전달하세요.', 'info');
+            });
+        }
+    });
+
+    btnCopyLocalUrl?.addEventListener('click', () => {
+        if (shareLocalUrl && shareLocalUrl.value) {
+            navigator.clipboard.writeText(shareLocalUrl.value).then(() => {
+                showToast('📋 로컬 주소가 복사되었습니다!', 'info');
+            });
         }
     });
 }

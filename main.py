@@ -5,7 +5,7 @@ import threading
 import time
 import socket
 import webbrowser
-from app import app
+from app import app, socketio
 
 def get_free_port():
     for p in [5000, 5001, 5050, 8080]:
@@ -26,7 +26,7 @@ def start_server(port):
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
-    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
+    socketio.run(app, host='127.0.0.1', port=port, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
 
 def main():
     port = get_free_port()

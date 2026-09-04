@@ -1,31 +1,24 @@
 [
   {
-    "id": "p1",
-    "back_number": 10,
-    "name": "김용걸",
     "age": 38,
+    "back_number": 10,
+    "id": "p1",
+    "name": "박지성",
     "positions": [
       "CAM",
-      "CM",
-      "ST"
+      "CM"
     ],
-    "position": "CAM",
-    "secondary_positions": [
-      "CM",
-      "ST"
-    ],
-    "foot": "오른발",
     "stats": {
-      "pac": 84,
-      "sho": 86,
-      "pas": 89,
-      "dri": 87,
       "def": 65,
-      "phy": 81
+      "dri": 87,
+      "pac": 95,
+      "pas": 89,
+      "phy": 81,
+      "sho": 86
     },
-    "total_score": 492,
-    "ovr": 86,
-    "notes": "축구회 주장 및 중원 플레이메이커. 경기 조율 및 날카로운 킬패스 탁월"
+    "position": "CAM",
+    "ovr": 88,
+    "total_score": 503
   },
   {
     "id": "p2",

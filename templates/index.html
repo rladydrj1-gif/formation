@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>부산시청 축구회 - FIFA 스타일 포메이션 & 선수 분석 매니저</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="/static/vendor/chart.min.js"></script>
     <script src="/static/vendor/html2canvas.min.js"></script>
 </head>
@@ -44,6 +45,20 @@
         </div>
 
         <div class="header-right">
+            <!-- 실시간 협업 상태 & 링크 공유 -->
+            <div class="live-collab-group">
+                <div class="live-status-pill" id="liveStatusPill" title="실시간 웹소켓 연결 상태">
+                    <span class="status-dot"></span>
+                    <span id="liveStatusText">연결 중...</span>
+                </div>
+                <button id="btnSetNickname" class="btn btn-outline-gold btn-sm" title="내 코치 닉네임 설정">
+                    👤 <span id="currentNickname">감독</span>
+                </button>
+                <button id="btnShareLink" class="btn btn-secondary btn-sm" title="동료 접속 링크(IP) 복사">
+                    🔗 <span>접속 공유</span>
+                </button>
+            </div>
+
             <button id="btnExportImage" class="btn btn-primary" title="현재 포메이션을 이미지로 저장합니다">
                 📸 이미지 저장
             </button>
@@ -497,6 +512,41 @@
             </div>
         </div>
     </div>
+
+    <!-- 동료 코치 접속 링크 공유 모달 -->
+    <div id="shareModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-window modal-sm">
+            <div class="modal-header">
+                <h3>🔗 실시간 동료 협업 초대 링크</h3>
+                <button class="modal-close" id="btnCloseShareModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">
+                    같은 Wi-Fi(사무실/운동장/가정)에 연결된 동료들의 <strong>스마트폰, 태블릿, 노트북</strong> 브라우저에 아래 주소를 입력하면 실시간으로 동시에 전술 및 점수를 수정할 수 있습니다!
+                </p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px;color:var(--accent-gold);font-weight:bold;">동료 접속용 네트워크 주소 (와이파이):</label>
+                    <div style="display:flex;gap:6px;margin-top:4px;">
+                        <input type="text" id="shareNetworkUrl" class="form-control" readonly style="font-weight:bold;color:#2ecc71;background:#141724;font-size:12px;">
+                        <button id="btnCopyNetworkUrl" class="btn btn-success" style="white-space:nowrap;padding:6px 12px;font-size:11px;">복사</button>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-muted);">현재 PC 접속용 로컬 주소:</label>
+                    <div style="display:flex;gap:6px;margin-top:4px;">
+                        <input type="text" id="shareLocalUrl" class="form-control" readonly style="font-size:11px;background:#141724;">
+                        <button id="btnCopyLocalUrl" class="btn btn-secondary" style="white-space:nowrap;padding:6px 12px;font-size:11px;">복사</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCloseShareModal2">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 실시간 활동 알림 토스트 컨테이너 -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="/static/app.js"></script>
 </body>

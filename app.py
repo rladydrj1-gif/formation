@@ -3,7 +3,10 @@ import os
 import sys
 import json
 import io
+import socket
+import urllib.parse
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_socketio import SocketIO, emit
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -53,6 +56,60 @@ init_files()
 app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
+app.config['SECRET_KEY'] = 'busan_fc_formation_secret_2026'
+
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return '127.0.0.1'
+
+def get_editor_name():
+    raw = request.headers.get('X-Editor-Name') or request.args.get('editor')
+    if raw:
+        try:
+            return urllib.parse.unquote(raw)
+        except Exception:
+            return raw
+    return '동료 코치'
+
+active_connections = 0
+
+@socketio.on('connect')
+def handle_connect():
+    global active_connections
+    active_connections += 1
+    socketio.emit('users_count', {'count': active_connections})
+    emit('sync_state', {
+        'players': load_players(),
+        'tactics': load_tactics(),
+        'users_count': active_connections
+    })
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    global active_connections
+    if active_connections > 0:
+        active_connections -= 1
+    socketio.emit('users_count', {'count': active_connections})
+
+@socketio.on('client_update_player')
+def handle_client_update_player(data):
+    editor = data.get('editor', '동료 코치')
+    player = data.get('player')
+    socketio.emit('player_updated', {'player': player, 'editor': editor}, include_self=False)
+
+@socketio.on('client_update_tactics')
+def handle_client_update_tactics(data):
+    editor = data.get('editor', '동료 코치')
+    tactics = data.get('tactics')
+    socketio.emit('tactics_updated', {'tactics': tactics, 'editor': editor}, include_self=False)
 
 def calculate_ovr(pos, stats):
     pac = stats.get('pac', 70)
@@ -199,6 +256,17 @@ def calculate_ai_lineup(formation_key):
 
     return assignment
 
+@app.route('/api/server-info', methods=['GET'])
+def get_server_info():
+    ip = get_local_ip()
+    port = request.host.split(':')[1] if ':' in request.host else '5000'
+    return jsonify({
+        'local_ip': ip,
+        'port': port,
+        'network_url': f"http://{ip}:{port}",
+        'local_url': f"http://localhost:{port}"
+    })
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -242,11 +310,15 @@ def save_player():
             players.append(data)
 
     save_players(players)
+    editor = get_editor_name()
+    socketio.emit('player_updated', {'player': data, 'editor': editor})
     return jsonify({'success': True, 'player': data})
 
 @app.route('/api/players/<player_id>', methods=['DELETE'])
 def delete_player(player_id):
     players = load_players()
+    target_player = next((p for p in players if p.get('id') == player_id), None)
+    p_name = target_player.get('name', '선수') if target_player else '선수'
     players = [p for p in players if p.get('id') != player_id]
     save_players(players)
 
@@ -259,6 +331,9 @@ def delete_player(player_id):
     tactics['substitutes'] = [pid for pid in subs if pid != player_id]
     save_tactics(tactics)
 
+    editor = get_editor_name()
+    socketio.emit('player_deleted', {'player_id': player_id, 'player_name': p_name, 'editor': editor})
+    socketio.emit('tactics_updated', {'tactics': tactics, 'editor': editor})
     return jsonify({'success': True})
 
 @app.route('/api/tactics', methods=['GET'])
@@ -269,6 +344,8 @@ def get_tactics():
 def update_tactics():
     data = request.json
     save_tactics(data)
+    editor = get_editor_name()
+    socketio.emit('tactics_updated', {'tactics': data, 'editor': editor})
     return jsonify({'success': True})
 
 @app.route('/api/tactics/recommend', methods=['GET'])
@@ -283,6 +360,8 @@ def get_recommendation():
 
 @app.route('/api/reset-default', methods=['POST'])
 def reset_default():
+    p_data = []
+    t_data = {}
     if os.path.exists(DEFAULT_PLAYERS_FILE):
         with open(DEFAULT_PLAYERS_FILE, 'r', encoding='utf-8') as sf:
             p_data = json.load(sf)
@@ -291,6 +370,8 @@ def reset_default():
         with open(DEFAULT_TACTICS_FILE, 'r', encoding='utf-8') as sf:
             t_data = json.load(sf)
         save_tactics(t_data)
+    editor = get_editor_name()
+    socketio.emit('players_imported', {'players': p_data, 'tactics': t_data, 'editor': editor})
     return jsonify({'success': True})
 
 @app.route('/api/export-excel', methods=['GET'])
@@ -499,9 +580,11 @@ def import_excel():
             return jsonify({'success': False, 'error': '엑셀에서 유효한 선수 데이터를 찾을 수 없습니다.'}), 400
 
         save_players(new_players)
+        editor = get_editor_name()
+        socketio.emit('players_imported', {'players': new_players, 'count': len(new_players), 'editor': editor})
         return jsonify({'success': True, 'count': len(new_players)})
     except Exception as e:
         return jsonify({'success': False, 'error': f'엑셀 처리 중 오류 발생: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
