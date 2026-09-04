@@ -1,0 +1,437 @@
+{
+  "currentFormation": "4-3-3",
+  "formations": {
+    "4-3-3": {
+      "name": "4-3-3 (공격형)",
+      "slots": [
+        {
+          "slotId": "s_gk",
+          "role": "GK",
+          "label": "GK",
+          "x": 50,
+          "y": 88
+        },
+        {
+          "slotId": "s_lb",
+          "role": "LB",
+          "label": "LB",
+          "x": 15,
+          "y": 72
+        },
+        {
+          "slotId": "s_lcb",
+          "role": "CB",
+          "label": "LCB",
+          "x": 38,
+          "y": 75
+        },
+        {
+          "slotId": "s_rcb",
+          "role": "CB",
+          "label": "RCB",
+          "x": 62,
+          "y": 75
+        },
+        {
+          "slotId": "s_rb",
+          "role": "RB",
+          "label": "RB",
+          "x": 85,
+          "y": 72
+        },
+        {
+          "slotId": "s_cdm",
+          "role": "CDM",
+          "label": "CDM",
+          "x": 50,
+          "y": 56
+        },
+        {
+          "slotId": "s_lcm",
+          "role": "CM",
+          "label": "LCM",
+          "x": 30,
+          "y": 44
+        },
+        {
+          "slotId": "s_rcm",
+          "role": "CAM",
+          "label": "CAM",
+          "x": 70,
+          "y": 44
+        },
+        {
+          "slotId": "s_lw",
+          "role": "LW",
+          "label": "LW",
+          "x": 18,
+          "y": 22
+        },
+        {
+          "slotId": "s_st",
+          "role": "ST",
+          "label": "ST",
+          "x": 50,
+          "y": 16
+        },
+        {
+          "slotId": "s_rw",
+          "role": "RW",
+          "label": "RW",
+          "x": 82,
+          "y": 22
+        }
+      ]
+    },
+    "4-4-2": {
+      "name": "4-4-2 (클래식 밸런스)",
+      "slots": [
+        {
+          "slotId": "s_gk",
+          "role": "GK",
+          "label": "GK",
+          "x": 50,
+          "y": 88
+        },
+        {
+          "slotId": "s_lb",
+          "role": "LB",
+          "label": "LB",
+          "x": 15,
+          "y": 72
+        },
+        {
+          "slotId": "s_lcb",
+          "role": "CB",
+          "label": "LCB",
+          "x": 38,
+          "y": 75
+        },
+        {
+          "slotId": "s_rcb",
+          "role": "CB",
+          "label": "RCB",
+          "x": 62,
+          "y": 75
+        },
+        {
+          "slotId": "s_rb",
+          "role": "RB",
+          "label": "RB",
+          "x": 85,
+          "y": 72
+        },
+        {
+          "slotId": "s_lm",
+          "role": "LM",
+          "label": "LM",
+          "x": 16,
+          "y": 48
+        },
+        {
+          "slotId": "s_lcm",
+          "role": "CM",
+          "label": "LCM",
+          "x": 38,
+          "y": 50
+        },
+        {
+          "slotId": "s_rcm",
+          "role": "CM",
+          "label": "RCM",
+          "x": 62,
+          "y": 50
+        },
+        {
+          "slotId": "s_rm",
+          "role": "RM",
+          "label": "RM",
+          "x": 84,
+          "y": 48
+        },
+        {
+          "slotId": "s_lst",
+          "role": "ST",
+          "label": "LS",
+          "x": 36,
+          "y": 20
+        },
+        {
+          "slotId": "s_rst",
+          "role": "ST",
+          "label": "RS",
+          "x": 64,
+          "y": 20
+        }
+      ]
+    },
+    "4-2-3-1": {
+      "name": "4-2-3-1 (현대 전술)",
+      "slots": [
+        {
+          "slotId": "s_gk",
+          "role": "GK",
+          "label": "GK",
+          "x": 50,
+          "y": 88
+        },
+        {
+          "slotId": "s_lb",
+          "role": "LB",
+          "label": "LB",
+          "x": 15,
+          "y": 72
+        },
+        {
+          "slotId": "s_lcb",
+          "role": "CB",
+          "label": "LCB",
+          "x": 38,
+          "y": 75
+        },
+        {
+          "slotId": "s_rcb",
+          "role": "CB",
+          "label": "RCB",
+          "x": 62,
+          "y": 75
+        },
+        {
+          "slotId": "s_rb",
+          "role": "RB",
+          "label": "RB",
+          "x": 85,
+          "y": 72
+        },
+        {
+          "slotId": "s_ldm",
+          "role": "CDM",
+          "label": "LDM",
+          "x": 36,
+          "y": 58
+        },
+        {
+          "slotId": "s_rdm",
+          "role": "CDM",
+          "label": "RDM",
+          "x": 64,
+          "y": 58
+        },
+        {
+          "slotId": "s_lam",
+          "role": "LW",
+          "label": "LAM",
+          "x": 20,
+          "y": 35
+        },
+        {
+          "slotId": "s_cam",
+          "role": "CAM",
+          "label": "CAM",
+          "x": 50,
+          "y": 36
+        },
+        {
+          "slotId": "s_ram",
+          "role": "RW",
+          "label": "RAM",
+          "x": 80,
+          "y": 35
+        },
+        {
+          "slotId": "s_st",
+          "role": "ST",
+          "label": "ST",
+          "x": 50,
+          "y": 16
+        }
+      ]
+    },
+    "3-5-2": {
+      "name": "3-5-2 (미드필더 장악)",
+      "slots": [
+        {
+          "slotId": "s_gk",
+          "role": "GK",
+          "label": "GK",
+          "x": 50,
+          "y": 88
+        },
+        {
+          "slotId": "s_lcb",
+          "role": "CB",
+          "label": "LCB",
+          "x": 26,
+          "y": 74
+        },
+        {
+          "slotId": "s_cb",
+          "role": "CB",
+          "label": "CB",
+          "x": 50,
+          "y": 76
+        },
+        {
+          "slotId": "s_rcb",
+          "role": "CB",
+          "label": "RCB",
+          "x": 74,
+          "y": 74
+        },
+        {
+          "slotId": "s_lwb",
+          "role": "LWB",
+          "label": "LWB",
+          "x": 14,
+          "y": 48
+        },
+        {
+          "slotId": "s_ldm",
+          "role": "CDM",
+          "label": "CDM",
+          "x": 38,
+          "y": 55
+        },
+        {
+          "slotId": "s_rdm",
+          "role": "CDM",
+          "label": "CDM",
+          "x": 62,
+          "y": 55
+        },
+        {
+          "slotId": "s_cam",
+          "role": "CAM",
+          "label": "CAM",
+          "x": 50,
+          "y": 38
+        },
+        {
+          "slotId": "s_rwb",
+          "role": "RWB",
+          "label": "RWB",
+          "x": 86,
+          "y": 48
+        },
+        {
+          "slotId": "s_lst",
+          "role": "ST",
+          "label": "LS",
+          "x": 36,
+          "y": 18
+        },
+        {
+          "slotId": "s_rst",
+          "role": "ST",
+          "label": "RS",
+          "x": 64,
+          "y": 18
+        }
+      ]
+    },
+    "5-3-2": {
+      "name": "5-3-2 (역습 질식수비)",
+      "slots": [
+        {
+          "slotId": "s_gk",
+          "role": "GK",
+          "label": "GK",
+          "x": 50,
+          "y": 88
+        },
+        {
+          "slotId": "s_lwb",
+          "role": "LB",
+          "label": "LWB",
+          "x": 12,
+          "y": 68
+        },
+        {
+          "slotId": "s_lcb",
+          "role": "CB",
+          "label": "LCB",
+          "x": 31,
+          "y": 75
+        },
+        {
+          "slotId": "s_cb",
+          "role": "CB",
+          "label": "CB",
+          "x": 50,
+          "y": 77
+        },
+        {
+          "slotId": "s_rcb",
+          "role": "CB",
+          "label": "RCB",
+          "x": 69,
+          "y": 75
+        },
+        {
+          "slotId": "s_rwb",
+          "role": "RB",
+          "label": "RWB",
+          "x": 88,
+          "y": 68
+        },
+        {
+          "slotId": "s_lcm",
+          "role": "CM",
+          "label": "LCM",
+          "x": 30,
+          "y": 46
+        },
+        {
+          "slotId": "s_cm",
+          "role": "CM",
+          "label": "CM",
+          "x": 50,
+          "y": 48
+        },
+        {
+          "slotId": "s_rcm",
+          "role": "CM",
+          "label": "RCM",
+          "x": 70,
+          "y": 46
+        },
+        {
+          "slotId": "s_lst",
+          "role": "ST",
+          "label": "LS",
+          "x": 36,
+          "y": 18
+        },
+        {
+          "slotId": "s_rst",
+          "role": "ST",
+          "label": "RS",
+          "x": 64,
+          "y": 18
+        }
+      ]
+    }
+  },
+  "starting11": {
+    "s_gk": "p11",
+    "s_lb": "p7",
+    "s_lcb": "p9",
+    "s_rcb": "p8",
+    "s_rb": "p10",
+    "s_cdm": "p6",
+    "s_lcm": "p5",
+    "s_rcm": "p1",
+    "s_lw": "p3",
+    "s_st": "p2",
+    "s_rw": "p4"
+  },
+  "substitutes": [
+    "p12",
+    "p13",
+    "p14",
+    "p15",
+    "p16",
+    "p17",
+    "p18"
+  ]
+}
