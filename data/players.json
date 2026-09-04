@@ -1,58 +1,63 @@
 [
   {
-    "age": 38,
-    "back_number": 10,
     "id": "p1",
-    "name": "박지성",
+    "back_number": 10,
+    "name": "김용걸",
+    "age": 41,
     "positions": [
-      "CAM",
-      "CM"
+      "RB",
+      "RW",
+      "CDM"
     ],
+    "position": "RB",
+    "secondary_positions": [
+      "RW",
+      "CDM"
+    ],
+    "foot": "오른발",
     "stats": {
-      "def": 65,
+      "pac": 88,
+      "sho": 88,
+      "pas": 93,
       "dri": 87,
-      "pac": 95,
-      "pas": 89,
-      "phy": 81,
-      "sho": 86
+      "def": 93,
+      "phy": 86
     },
-    "position": "CAM",
-    "ovr": 88,
-    "total_score": 503
+    "total_score": 535,
+    "ovr": 89,
+    "notes": "멀티 플레이어"
   },
   {
     "id": "p2",
     "back_number": 9,
-    "name": "박준혁",
-    "age": 32,
+    "name": "강경현",
+    "age": 42,
     "positions": [
-      "ST",
-      "RW",
-      "CAM"
+      "CDM",
+      "CB"
     ],
-    "position": "ST",
+    "position": "CDM",
     "secondary_positions": [
-      "RW",
-      "CAM"
+      "CB"
     ],
-    "foot": "양발",
+    "foot": "오른발",
     "stats": {
-      "pac": 88,
-      "sho": 87,
-      "pas": 73,
-      "dri": 82,
-      "def": 45,
-      "phy": 84
+      "pac": 90,
+      "sho": 98,
+      "pas": 95,
+      "dri": 90,
+      "def": 95,
+      "phy": 90
     },
-    "total_score": 459,
-    "ovr": 85,
-    "notes": "결정력이 뛰어난 스트라이커. 박스 안 침착성과 양발 슈팅 능력 발군"
+    "total_score": 558,
+    "ovr": 93,
+    "notes": "축구회 주장 및 중원 플레이메이커. 경기 조율 및 날카로운 킬패스 탁월"
   },
   {
     "id": "p3",
     "back_number": 7,
-    "name": "이민재",
-    "age": 29,
+    "name": "박동현",
+    "age": 30,
     "positions": [
       "LW",
       "RW",
@@ -79,8 +84,8 @@
   {
     "id": "p4",
     "back_number": 11,
-    "name": "정현우",
-    "age": 31,
+    "name": "장성유",
+    "age": 30,
     "positions": [
       "RW",
       "LW",
@@ -107,8 +112,8 @@
   {
     "id": "p5",
     "back_number": 8,
-    "name": "강동진",
-    "age": 35,
+    "name": "박종민",
+    "age": 30,
     "positions": [
       "CM",
       "CAM",
@@ -135,8 +140,8 @@
   {
     "id": "p6",
     "back_number": 6,
-    "name": "최성호",
-    "age": 36,
+    "name": "박재형",
+    "age": 30,
     "positions": [
       "CDM",
       "CB",
@@ -163,7 +168,7 @@
   {
     "id": "p7",
     "back_number": 3,
-    "name": "조승원",
+    "name": "이영범",
     "age": 30,
     "positions": [
       "LB",
@@ -191,8 +196,8 @@
   {
     "id": "p8",
     "back_number": 4,
-    "name": "윤태식",
-    "age": 37,
+    "name": "강동화",
+    "age": 30,
     "positions": [
       "CB",
       "CDM",
@@ -219,8 +224,8 @@
   {
     "id": "p9",
     "back_number": 5,
-    "name": "서지훈",
-    "age": 34,
+    "name": "김계용",
+    "age": 30,
     "positions": [
       "CB",
       "RB",
@@ -247,8 +252,8 @@
   {
     "id": "p10",
     "back_number": 2,
-    "name": "한상우",
-    "age": 28,
+    "name": "서승환",
+    "age": 30,
     "positions": [
       "RB",
       "RWB",
@@ -275,8 +280,8 @@
   {
     "id": "p11",
     "back_number": 1,
-    "name": "오세범",
-    "age": 39,
+    "name": "신현태",
+    "age": 30,
     "positions": [
       "GK"
     ],
@@ -298,8 +303,8 @@
   {
     "id": "p12",
     "back_number": 18,
-    "name": "문경호",
-    "age": 33,
+    "name": "엄태현",
+    "age": 30,
     "positions": [
       "ST",
       "CAM",
@@ -326,8 +331,8 @@
   {
     "id": "p13",
     "back_number": 14,
-    "name": "배성민",
-    "age": 27,
+    "name": "김우건",
+    "age": 30,
     "positions": [
       "CM",
       "LM",
@@ -354,8 +359,8 @@
   {
     "id": "p14",
     "back_number": 16,
-    "name": "송치원",
-    "age": 35,
+    "name": "마준호",
+    "age": 30,
     "positions": [
       "CDM",
       "CB",
@@ -382,8 +387,8 @@
   {
     "id": "p15",
     "back_number": 20,
-    "name": "임재현",
-    "age": 31,
+    "name": "박신철",
+    "age": 30,
     "positions": [
       "CB",
       "LB",
@@ -410,8 +415,8 @@
   {
     "id": "p16",
     "back_number": 17,
-    "name": "유도훈",
-    "age": 29,
+    "name": "최재문",
+    "age": 30,
     "positions": [
       "LW",
       "LB",
@@ -438,7 +443,7 @@
   {
     "id": "p17",
     "back_number": 19,
-    "name": "권영진",
+    "name": "소현우",
     "age": 30,
     "positions": [
       "RB",
@@ -466,8 +471,8 @@
   {
     "id": "p18",
     "back_number": 21,
-    "name": "신동엽",
-    "age": 32,
+    "name": "정의헌",
+    "age": 30,
     "positions": [
       "GK"
     ],

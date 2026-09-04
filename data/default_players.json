@@ -1,70 +1,74 @@
 [
   {
     "id": "p1",
-    "name": "김용걸",
     "back_number": 10,
-    "position": "CAM",
+    "name": "김용걸",
+    "age": 41,
+    "positions": [
+      "RB",
+      "RW",
+      "CDM"
+    ],
+    "position": "RB",
     "secondary_positions": [
-      "CM",
-      "ST"
+      "RW",
+      "CDM"
     ],
     "foot": "오른발",
-    "age": 38,
     "stats": {
-      "pac": 84,
-      "sho": 86,
-      "pas": 89,
+      "pac": 88,
+      "sho": 88,
+      "pas": 93,
       "dri": 87,
-      "def": 65,
-      "phy": 81
+      "def": 93,
+      "phy": 86
     },
-    "ovr": 85,
-    "notes": "축구회 주장 및 중원 플레이메이커. 경기 조율 및 날카로운 킬패스 탁월",
-    "total_score": 492,
-    "positions": [
-      "CAM",
-      "CM",
-      "ST"
-    ]
+    "total_score": 535,
+    "ovr": 89,
+    "notes": "멀티 플레이어"
   },
   {
     "id": "p2",
-    "name": "박준혁",
     "back_number": 9,
-    "position": "ST",
-    "secondary_positions": [
-      "RW"
-    ],
-    "foot": "양발",
-    "age": 32,
-    "stats": {
-      "pac": 88,
-      "sho": 87,
-      "pas": 73,
-      "dri": 82,
-      "def": 45,
-      "phy": 84
-    },
-    "ovr": 84,
-    "notes": "결정력이 뛰어난 스트라이커. 박스 안 침착성과 양발 슈팅 능력 발군",
-    "total_score": 459,
+    "name": "강경현",
+    "age": 42,
     "positions": [
-      "ST",
-      "RW",
-      "CAM"
-    ]
+      "CDM",
+      "CB"
+    ],
+    "position": "CDM",
+    "secondary_positions": [
+      "CB"
+    ],
+    "foot": "오른발",
+    "stats": {
+      "pac": 90,
+      "sho": 98,
+      "pas": 95,
+      "dri": 90,
+      "def": 95,
+      "phy": 90
+    },
+    "total_score": 558,
+    "ovr": 93,
+    "notes": "축구회 주장 및 중원 플레이메이커. 경기 조율 및 날카로운 킬패스 탁월"
   },
   {
     "id": "p3",
-    "name": "이민재",
     "back_number": 7,
+    "name": "박동현",
+    "age": 30,
+    "positions": [
+      "LW",
+      "RW",
+      "ST"
+    ],
     "position": "LW",
     "secondary_positions": [
       "RW",
       "ST"
     ],
     "foot": "오른발",
-    "age": 29,
     "stats": {
       "pac": 91,
       "sho": 81,
@@ -73,26 +77,26 @@
       "def": 52,
       "phy": 75
     },
-    "ovr": 82,
-    "notes": "폭발적인 주력을 가진 윙어. 측면 돌파 및 컷인 슈팅 주특기",
     "total_score": 463,
-    "positions": [
-      "LW",
-      "RW",
-      "ST"
-    ]
+    "ovr": 84,
+    "notes": "폭발적인 주력을 가진 윙어. 측면 돌파 및 컷인 슈팅 주특기"
   },
   {
     "id": "p4",
-    "name": "정현우",
     "back_number": 11,
+    "name": "장성유",
+    "age": 30,
+    "positions": [
+      "RW",
+      "LW",
+      "RM"
+    ],
     "position": "RW",
     "secondary_positions": [
       "LW",
       "RM"
     ],
     "foot": "왼발",
-    "age": 31,
     "stats": {
       "pac": 89,
       "sho": 79,
@@ -101,26 +105,26 @@
       "def": 54,
       "phy": 74
     },
-    "ovr": 81,
-    "notes": "정교한 왼발 크로스를 구사하는 테크니션 윙어",
     "total_score": 463,
-    "positions": [
-      "RW",
-      "LW",
-      "RM"
-    ]
+    "ovr": 84,
+    "notes": "정교한 왼발 크로스를 구사하는 테크니션 윙어"
   },
   {
     "id": "p5",
-    "name": "강동진",
     "back_number": 8,
+    "name": "박종민",
+    "age": 30,
+    "positions": [
+      "CM",
+      "CAM",
+      "CDM"
+    ],
     "position": "CM",
     "secondary_positions": [
       "CAM",
       "CDM"
     ],
     "foot": "오른발",
-    "age": 35,
     "stats": {
       "pac": 77,
       "sho": 78,
@@ -129,26 +133,26 @@
       "def": 74,
       "phy": 83
     },
-    "ovr": 81,
-    "notes": "왕성한 활동량의 박스 투 박스 미드필더. 공수 연결고리 역할",
     "total_score": 477,
-    "positions": [
-      "CM",
-      "CAM",
-      "CDM"
-    ]
+    "ovr": 80,
+    "notes": "왕성한 활동량의 박스 투 박스 미드필더. 공수 연결고리 역할"
   },
   {
     "id": "p6",
-    "name": "최성호",
     "back_number": 6,
+    "name": "박재형",
+    "age": 30,
+    "positions": [
+      "CDM",
+      "CB",
+      "CM"
+    ],
     "position": "CDM",
     "secondary_positions": [
       "CB",
       "CM"
     ],
     "foot": "오른발",
-    "age": 36,
     "stats": {
       "pac": 73,
       "sho": 65,
@@ -157,26 +161,26 @@
       "def": 86,
       "phy": 88
     },
-    "ovr": 83,
-    "notes": "피지컬을 앞세운 볼 탈환 전문가. 상대 공격 차단 및 후방 커버",
     "total_score": 468,
-    "positions": [
-      "CDM",
-      "CB",
-      "CM"
-    ]
+    "ovr": 82,
+    "notes": "피지컬을 앞세운 볼 탈환 전문가. 상대 공격 차단 및 후방 커버"
   },
   {
     "id": "p7",
-    "name": "조승원",
     "back_number": 3,
+    "name": "이영범",
+    "age": 30,
+    "positions": [
+      "LB",
+      "LWB",
+      "CB"
+    ],
     "position": "LB",
     "secondary_positions": [
       "LWB",
       "CB"
     ],
     "foot": "왼발",
-    "age": 30,
     "stats": {
       "pac": 85,
       "sho": 64,
@@ -185,25 +189,26 @@
       "def": 81,
       "phy": 79
     },
-    "ovr": 80,
-    "notes": "공수 밸런스가 좋은 레프트백. 적극적인 오버래핑",
     "total_score": 464,
-    "positions": [
-      "LB",
-      "LWB",
-      "CB"
-    ]
+    "ovr": 81,
+    "notes": "공수 밸런스가 좋은 레프트백. 적극적인 오버래핑"
   },
   {
     "id": "p8",
-    "name": "윤태식",
     "back_number": 4,
+    "name": "강동화",
+    "age": 30,
+    "positions": [
+      "CB",
+      "CDM",
+      "RB"
+    ],
     "position": "CB",
     "secondary_positions": [
-      "CDM"
+      "CDM",
+      "RB"
     ],
     "foot": "오른발",
-    "age": 37,
     "stats": {
       "pac": 72,
       "sho": 55,
@@ -212,25 +217,26 @@
       "def": 88,
       "phy": 90
     },
-    "ovr": 84,
-    "notes": "수비라인의 통곡의 벽. 제공권 장악 및 강력한 대인방어",
     "total_score": 449,
-    "positions": [
-      "CB",
-      "CDM",
-      "RB"
-    ]
+    "ovr": 84,
+    "notes": "수비라인의 통곡의 벽. 제공권 장악 및 강력한 대인방어"
   },
   {
     "id": "p9",
-    "name": "서지훈",
     "back_number": 5,
+    "name": "김계용",
+    "age": 30,
+    "positions": [
+      "CB",
+      "RB",
+      "CDM"
+    ],
     "position": "CB",
     "secondary_positions": [
-      "RB"
+      "RB",
+      "CDM"
     ],
     "foot": "오른발",
-    "age": 34,
     "stats": {
       "pac": 76,
       "sho": 52,
@@ -239,26 +245,26 @@
       "def": 86,
       "phy": 85
     },
-    "ovr": 82,
-    "notes": "냉철한 판단력과 뛰어난 인터셉트 능력의 지능형 센터백",
     "total_score": 447,
-    "positions": [
-      "CB",
-      "RB",
-      "CDM"
-    ]
+    "ovr": 82,
+    "notes": "냉철한 판단력과 뛰어난 인터셉트 능력의 지능형 센터백"
   },
   {
     "id": "p10",
-    "name": "한상우",
     "back_number": 2,
+    "name": "서승환",
+    "age": 30,
+    "positions": [
+      "RB",
+      "RWB",
+      "RM"
+    ],
     "position": "RB",
     "secondary_positions": [
       "RWB",
       "RM"
     ],
     "foot": "오른발",
-    "age": 28,
     "stats": {
       "pac": 87,
       "sho": 68,
@@ -267,23 +273,21 @@
       "def": 80,
       "phy": 78
     },
-    "ovr": 81,
-    "notes": "빠른 기동력과 지치지 않는 스태미너의 라이트백",
     "total_score": 472,
-    "positions": [
-      "RB",
-      "RWB",
-      "RM"
-    ]
+    "ovr": 81,
+    "notes": "빠른 기동력과 지치지 않는 스태미너의 라이트백"
   },
   {
     "id": "p11",
-    "name": "오세범",
     "back_number": 1,
+    "name": "신현태",
+    "age": 30,
+    "positions": [
+      "GK"
+    ],
     "position": "GK",
     "secondary_positions": [],
     "foot": "오른발",
-    "age": 39,
     "stats": {
       "pac": 68,
       "sho": 50,
@@ -292,23 +296,26 @@
       "def": 88,
       "phy": 87
     },
-    "ovr": 84,
-    "notes": "부산시청 넘버원 수문장. 안정적인 공중볼 처리와 동물적 반사신경",
     "total_score": 434,
-    "positions": [
-      "GK"
-    ]
+    "ovr": 81,
+    "notes": "부산시청 넘버원 수문장. 안정적인 공중볼 처리와 동물적 반사신경"
   },
   {
     "id": "p12",
-    "name": "문경호",
     "back_number": 18,
+    "name": "엄태현",
+    "age": 30,
+    "positions": [
+      "ST",
+      "CAM",
+      "CF"
+    ],
     "position": "ST",
     "secondary_positions": [
-      "CAM"
+      "CAM",
+      "CF"
     ],
     "foot": "오른발",
-    "age": 33,
     "stats": {
       "pac": 81,
       "sho": 83,
@@ -317,26 +324,26 @@
       "def": 48,
       "phy": 85
     },
-    "ovr": 79,
-    "notes": "타깃형 공격수. 헤더와 등지는 플레이로 2선 침투 기회 창출",
     "total_score": 446,
-    "positions": [
-      "ST",
-      "CAM",
-      "CF"
-    ]
+    "ovr": 81,
+    "notes": "타깃형 공격수. 헤더와 등지는 플레이로 2선 침투 기회 창출"
   },
   {
     "id": "p13",
-    "name": "배성민",
     "back_number": 14,
+    "name": "김우건",
+    "age": 30,
+    "positions": [
+      "CM",
+      "LM",
+      "RM"
+    ],
     "position": "CM",
     "secondary_positions": [
       "LM",
       "RM"
     ],
     "foot": "양발",
-    "age": 27,
     "stats": {
       "pac": 82,
       "sho": 74,
@@ -345,25 +352,26 @@
       "def": 68,
       "phy": 76
     },
-    "ovr": 78,
-    "notes": "젊은 피의 패기. 빠른 템포와 탈압박이 장점인 미드필더",
     "total_score": 463,
-    "positions": [
-      "CM",
-      "LM",
-      "RM"
-    ]
+    "ovr": 78,
+    "notes": "젊은 피의 패기. 빠른 템포와 탈압박이 장점인 미드필더"
   },
   {
     "id": "p14",
-    "name": "송치원",
     "back_number": 16,
+    "name": "마준호",
+    "age": 30,
+    "positions": [
+      "CDM",
+      "CB",
+      "CM"
+    ],
     "position": "CDM",
     "secondary_positions": [
-      "CB"
+      "CB",
+      "CM"
     ],
     "foot": "오른발",
-    "age": 35,
     "stats": {
       "pac": 71,
       "sho": 60,
@@ -372,26 +380,26 @@
       "def": 82,
       "phy": 86
     },
-    "ovr": 79,
-    "notes": "거친 몸싸움과 끈질긴 압박으로 상대 에이스 무력화",
     "total_score": 445,
-    "positions": [
-      "CDM",
-      "CB",
-      "CM"
-    ]
+    "ovr": 78,
+    "notes": "거친 몸싸움과 끈질긴 압박으로 상대 에이스 무력화"
   },
   {
     "id": "p15",
-    "name": "임재현",
     "back_number": 20,
+    "name": "박신철",
+    "age": 30,
+    "positions": [
+      "CB",
+      "LB",
+      "RB"
+    ],
     "position": "CB",
     "secondary_positions": [
       "LB",
       "RB"
     ],
     "foot": "오른발",
-    "age": 31,
     "stats": {
       "pac": 78,
       "sho": 54,
@@ -400,25 +408,26 @@
       "def": 82,
       "phy": 81
     },
-    "ovr": 78,
-    "notes": "수비 전 지역 소화 가능한 유틸리티 수비수",
     "total_score": 440,
-    "positions": [
-      "CB",
-      "LB",
-      "RB"
-    ]
+    "ovr": 80,
+    "notes": "수비 전 지역 소화 가능한 유틸리티 수비수"
   },
   {
     "id": "p16",
-    "name": "유도훈",
     "back_number": 17,
+    "name": "최재문",
+    "age": 30,
+    "positions": [
+      "LW",
+      "LB",
+      "LM"
+    ],
     "position": "LW",
     "secondary_positions": [
-      "LB"
+      "LB",
+      "LM"
     ],
     "foot": "왼발",
-    "age": 29,
     "stats": {
       "pac": 86,
       "sho": 73,
@@ -427,25 +436,26 @@
       "def": 60,
       "phy": 73
     },
-    "ovr": 77,
-    "notes": "측면 스피드스터. 후반 조커로 투입 시 상대 수비진 교란",
     "total_score": 449,
-    "positions": [
-      "LW",
-      "LB",
-      "LM"
-    ]
+    "ovr": 80,
+    "notes": "측면 스피드스터. 후반 조커로 투입 시 상대 수비진 교란"
   },
   {
     "id": "p17",
-    "name": "권영진",
     "back_number": 19,
+    "name": "소현우",
+    "age": 30,
+    "positions": [
+      "RB",
+      "RWB",
+      "CB"
+    ],
     "position": "RB",
     "secondary_positions": [
-      "RWB"
+      "RWB",
+      "CB"
     ],
     "foot": "오른발",
-    "age": 30,
     "stats": {
       "pac": 83,
       "sho": 62,
@@ -454,23 +464,21 @@
       "def": 77,
       "phy": 78
     },
-    "ovr": 77,
-    "notes": "안정적인 수비와 지능적인 패스워크를 겸비한 풀백",
     "total_score": 451,
-    "positions": [
-      "RB",
-      "RWB",
-      "CB"
-    ]
+    "ovr": 78,
+    "notes": "안정적인 수비와 지능적인 패스워크를 겸비한 풀백"
   },
   {
     "id": "p18",
-    "name": "신동엽",
     "back_number": 21,
+    "name": "정의헌",
+    "age": 30,
+    "positions": [
+      "GK"
+    ],
     "position": "GK",
     "secondary_positions": [],
     "foot": "오른발",
-    "age": 32,
     "stats": {
       "pac": 65,
       "sho": 48,
@@ -479,11 +487,8 @@
       "def": 82,
       "phy": 81
     },
-    "ovr": 78,
-    "notes": "뛰어난 순발력의 서브 골키퍼. 승부차기 페널티킥 선방 능력 우수",
     "total_score": 412,
-    "positions": [
-      "GK"
-    ]
+    "ovr": 76,
+    "notes": "뛰어난 순발력의 서브 골키퍼. 승부차기 페널티킥 선방 능력 우수"
   }
 ]
