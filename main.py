@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 import sys
 import threading
@@ -40,7 +40,7 @@ def main():
 
     try:
         import webview
-        webview.create_window(title, url=url, width=1440, height=920, min_size=(1050, 700))
+        webview.create_window(title, url=url, width=1200, height=750, min_size=(960, 580))
         webview.start()
     except Exception as e:
         print(f"WebView launch note ({e}), opening in default browser...")
