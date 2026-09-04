@@ -9,5 +9,6 @@ if root_dir not in sys.path:
 
 from app import app
 
-# Vercel WSGI entry point
 app.debug = False
+# Vercel WSGI/ASGI 호환성 (app 및 handler 모두 노출)
+handler = app
