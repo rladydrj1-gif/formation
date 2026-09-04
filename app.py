@@ -1,10 +1,13 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import os
 import sys
 import json
 import io
 from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 def get_base_dir():
     if getattr(sys, 'frozen', False):
@@ -85,7 +88,13 @@ def load_players():
         init_files()
     try:
         with open(PLAYERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            players = json.load(f)
+            # Ensure each player has total_score and ovr
+            for p in players:
+                s = p.get('stats', {})
+                if 'total_score' not in p:
+                    p['total_score'] = sum([s.get('pac', 70), s.get('sho', 70), s.get('pas', 70), s.get('dri', 70), s.get('def', 70), s.get('phy', 70)])
+            return players
     except Exception:
         return []
 
@@ -123,7 +132,10 @@ def save_player():
     stats = data.get('stats', {'pac': 70, 'sho': 70, 'pas': 70, 'dri': 70, 'def': 70, 'phy': 70})
     pos = data.get('position', 'CM')
     ovr = calculate_ovr(pos, stats)
+    total_score = sum([stats.get('pac', 70), stats.get('sho', 70), stats.get('pas', 70), stats.get('dri', 70), stats.get('def', 70), stats.get('phy', 70)])
+
     data['ovr'] = ovr
+    data['total_score'] = total_score
 
     if not player_id:
         new_id = f'p_{len(players) + 1}_{int(os.times().system*1000)}'
@@ -184,36 +196,92 @@ def reset_default():
 @app.route('/api/export-excel', methods=['GET'])
 def export_excel():
     players = load_players()
-    rows = []
-    for p in players:
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = '선수단_명단_및_능력치'
+
+    headers = [
+        '선수ID', '등번호', '이름', '소속부서', '나이', '주포지션', '주발',
+        'PAC(주력)', 'SHO(슈팅)', 'PAS(패스)', 'DRI(드리블)', 'DEF(수비)', 'PHY(피지컬)',
+        '총점(6개합계)', '종합평점(OVR)', '선수특징/메모'
+    ]
+    ws.append(headers)
+
+    # Styles
+    header_font = Font(name='맑은 고딕', size=11, bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+    total_hdr_fill = PatternFill(start_color='C65911', end_color='C65911', fill_type='solid')
+
+    data_font = Font(name='맑은 고딕', size=10)
+    bold_font = Font(name='맑은 고딕', size=10, bold=True)
+    total_cell_fill = PatternFill(start_color='FFF2CC', end_color='FFF2CC', fill_type='solid')
+    center_align = Alignment(horizontal='center', vertical='center')
+    left_align = Alignment(horizontal='left', vertical='center')
+    thin_border = Border(
+        left=Side(style='thin', color='D9D9D9'),
+        right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'),
+        bottom=Side(style='thin', color='D9D9D9')
+    )
+
+    # Apply Header Styles
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = total_hdr_fill if col_idx in [14, 15] else header_fill
+        cell.alignment = center_align
+
+    # Add Player Rows
+    for idx, p in enumerate(players):
+        row_num = idx + 2
         stats = p.get('stats', {})
-        rows.append({
-            '선수ID': p.get('id'),
-            '등번호': p.get('back_number', 0),
-            '이름': p.get('name', ''),
-            '소속부서': p.get('department', ''),
-            '나이': p.get('age', 30),
-            '주포지션': p.get('position', 'CM'),
-            '주발': p.get('foot', '오른발'),
-            'OVR(종합)': p.get('ovr', 75),
-            'PAC(주력)': stats.get('pac', 70),
-            'SHO(슈팅)': stats.get('sho', 70),
-            'PAS(패스)': stats.get('pas', 70),
-            'DRI(드리블)': stats.get('dri', 70),
-            'DEF(수비)': stats.get('def', 70),
-            'PHY(피지컬)': stats.get('phy', 70),
-            '선수특징/메모': p.get('notes', '')
-        })
-    df = pd.DataFrame(rows)
+        row = [
+            p.get('id', f'p{idx+1}'),
+            p.get('back_number', idx + 1),
+            p.get('name', ''),
+            p.get('department', ''),
+            p.get('age', 30),
+            p.get('position', 'CM'),
+            p.get('foot', '오른발'),
+            stats.get('pac', 70),
+            stats.get('sho', 70),
+            stats.get('pas', 70),
+            stats.get('dri', 70),
+            stats.get('def', 70),
+            stats.get('phy', 70),
+            f'=SUM(H{row_num}:M{row_num})',
+            f'=ROUND(AVERAGE(H{row_num}:M{row_num}), 0)',
+            p.get('notes', '')
+        ]
+        ws.append(row)
+
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws.cell(row=row_num, column=col_idx)
+            cell.font = bold_font if col_idx in [2, 3, 14, 15] else data_font
+            cell.border = thin_border
+            if col_idx in [14, 15]:
+                cell.fill = total_cell_fill
+            cell.alignment = left_align if col_idx in [3, 4, 16] else center_align
+
+    # Auto-adjust column widths
+    column_widths = {
+        'A': 10, 'B': 8, 'C': 12, 'D': 16, 'E': 8, 'F': 10, 'G': 10,
+        'H': 12, 'I': 12, 'J': 12, 'K': 12, 'L': 12, 'M': 12,
+        'N': 15, 'O': 14, 'P': 40
+    }
+    for col_letter, width in column_widths.items():
+        ws.column_dimensions[col_letter].width = width
+
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='부산시청_선수단')
+    wb.save(output)
     output.seek(0)
+
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
-        download_name='부산시청_축구회_선수명단.xlsx'
+        download_name='부산시청_축구회_선수명단_및_능력치.xlsx'
     )
 
 @app.route('/api/import-excel', methods=['POST'])
@@ -228,38 +296,56 @@ def import_excel():
         df = pd.read_excel(file)
         new_players = []
         for idx, row in df.iterrows():
+            name = str(row.get('이름', '')).strip()
+            if not name or name == 'nan':
+                continue
+
             pos = str(row.get('주포지션', 'CM')).strip().upper()
+            pac = int(row.get('PAC(주력)', 70)) if pd.notna(row.get('PAC(주력)')) else 70
+            sho = int(row.get('SHO(슈팅)', 70)) if pd.notna(row.get('SHO(슈팅)')) else 70
+            pas = int(row.get('PAS(패스)', 70)) if pd.notna(row.get('PAS(패스)')) else 70
+            dri = int(row.get('DRI(드리블)', 70)) if pd.notna(row.get('DRI(드리블)')) else 70
+            def_ = int(row.get('DEF(수비)', 70)) if pd.notna(row.get('DEF(수비)')) else 70
+            phy = int(row.get('PHY(피지컬)', 70)) if pd.notna(row.get('PHY(피지컬)')) else 70
+
             stats = {
-                'pac': int(row.get('PAC(주력)', 70)),
-                'sho': int(row.get('SHO(슈팅)', 70)),
-                'pas': int(row.get('PAS(패스)', 70)),
-                'dri': int(row.get('DRI(드리블)', 70)),
-                'def': int(row.get('DEF(수비)', 70)),
-                'phy': int(row.get('PHY(피지컬)', 70)),
+                'pac': pac,
+                'sho': sho,
+                'pas': pas,
+                'dri': dri,
+                'def': def_,
+                'phy': phy
             }
+            total_score = pac + sho + pas + dri + def_ + phy
+            ovr = calculate_ovr(pos, stats)
+
             pid = str(row.get('선수ID', '')).strip()
             if not pid or pid == 'nan':
-                pid = f'p_imp_{idx}_{int(os.times().system*1000)}'
-            
+                pid = f'p_imp_{idx+1}_{int(os.times().system*1000)}'
+
             p = {
                 'id': pid,
                 'back_number': int(row.get('등번호', idx + 1)) if pd.notna(row.get('등번호')) else idx + 1,
-                'name': str(row.get('이름', f'선수{idx+1}')).strip(),
-                'department': str(row.get('소속부서', '부산시청')).strip(),
+                'name': name,
+                'department': str(row.get('소속부서', '부산시청')).strip() if pd.notna(row.get('소속부서')) else '부산시청',
                 'age': int(row.get('나이', 30)) if pd.notna(row.get('나이')) else 30,
                 'position': pos,
                 'secondary_positions': [],
-                'foot': str(row.get('주발', '오른발')).strip(),
+                'foot': str(row.get('주발', '오른발')).strip() if pd.notna(row.get('주발')) else '오른발',
                 'stats': stats,
-                'ovr': calculate_ovr(pos, stats),
+                'total_score': total_score,
+                'ovr': ovr,
                 'notes': str(row.get('선수특징/메모', '')).strip() if pd.notna(row.get('선수특징/메모')) else ''
             }
             new_players.append(p)
-        
+
+        if not new_players:
+            return jsonify({'success': False, 'error': '엑셀에서 유효한 선수 데이터를 찾을 수 없습니다.'}), 400
+
         save_players(new_players)
         return jsonify({'success': True, 'count': len(new_players)})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': f'엑셀 처리 중 오류 발생: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)

@@ -156,11 +156,13 @@ body {
 }
 
 .btn-success {
-    background: #27ae60;
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
     color: #fff;
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
 }
 .btn-success:hover {
-    background: #2ecc71;
+    filter: brightness(1.1);
+    transform: translateY(-1px);
 }
 
 .btn-outline-danger {
@@ -218,10 +220,19 @@ body {
     background: linear-gradient(135deg, #2b1f0c 0%, #44320e 100%);
     border-color: var(--accent-gold);
 }
-
 .metric-card.highlight .metric-value {
     color: var(--accent-gold-light);
     font-size: 20px;
+}
+
+.metric-card.highlight-gold {
+    background: linear-gradient(135deg, #3d2c0e 0%, #634710 100%);
+    border-color: #ffd255;
+}
+.metric-card.highlight-gold .metric-value {
+    color: #fff;
+    font-size: 18px;
+    text-shadow: 0 0 8px rgba(255, 210, 85, 0.4);
 }
 
 .metric-card.info .metric-value {
@@ -437,7 +448,6 @@ body {
     z-index: 5;
 }
 
-/* Pitch Slot Item */
 .pitch-slot {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -601,6 +611,12 @@ body {
     font-weight: 700;
 }
 
+.bench-chip .tot {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffd56b;
+}
+
 .bench-chip .ovr {
     font-size: 11px;
     font-weight: 800;
@@ -667,7 +683,7 @@ body {
 
 .fifa-card {
     width: 260px;
-    height: 360px;
+    min-height: 370px;
     background: linear-gradient(135deg, #e3ba5b 0%, #b88a29 35%, #59420e 70%, #d4a942 100%);
     border-radius: 18px;
     padding: 16px;
@@ -759,6 +775,38 @@ body {
     margin-top: 1px;
 }
 
+/* Card Total Score Badge */
+.card-total-badge {
+    margin-top: 6px;
+    background: rgba(18, 16, 10, 0.85);
+    border: 1px solid var(--accent-gold-light);
+    border-radius: 12px;
+    padding: 2px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.card-total-badge .tot-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--accent-gold);
+    letter-spacing: 0.5px;
+}
+
+.card-total-badge .tot-val {
+    font-size: 14px;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.card-total-badge .tot-max {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+}
+
 .card-divider {
     width: 85%;
     height: 1.5px;
@@ -843,7 +891,8 @@ body {
 
 .player-summary-box .info-row {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
     color: var(--text-muted);
     margin-bottom: 6px;
     border-bottom: 1px solid #1a253d;
@@ -987,12 +1036,22 @@ body {
     color: #fff;
 }
 
+.squad-item-scores {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.squad-item-tot {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-gold-light);
+}
+
 .squad-item-ovr {
     font-size: 16px;
     font-weight: 900;
     color: var(--accent-gold);
-    min-width: 26px;
-    text-align: right;
 }
 
 /* Modals */
@@ -1114,12 +1173,27 @@ body {
     color: var(--accent-gold-light);
 }
 
+.realtime-score-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.realtime-total {
+    font-size: 12px;
+    color: var(--accent-gold-light);
+}
+.realtime-total b {
+    font-size: 15px;
+    color: #fff;
+}
+
 .realtime-ovr {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 .realtime-ovr b {
-    font-size: 16px;
+    font-size: 15px;
     color: var(--accent-gold);
 }
 

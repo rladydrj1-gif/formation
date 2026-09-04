@@ -36,11 +36,11 @@
             <button id="btnExportImage" class="btn btn-primary" title="현재 포메이션을 이미지로 저장합니다">
                 📸 라인업 이미지 저장
             </button>
-            <button id="btnExportExcel" class="btn btn-secondary" title="선수단 명단을 엑셀 파일로 다운로드합니다">
-                📥 엑셀 내보내기
+            <button id="btnExportExcel" class="btn btn-success" title="선수단 명단 및 점수(총점 수식 포함) 엑셀을 다운로드합니다">
+                📥 엑셀 명단/양식 받기
             </button>
-            <button id="btnImportExcel" class="btn btn-secondary" title="엑셀 파일로 선수단을 등록합니다">
-                📤 엑셀 가져오기
+            <button id="btnImportExcel" class="btn btn-secondary" title="작성한 엑셀 파일로 선수 점수를 일괄 등록합니다">
+                📤 엑셀 일괄 가져오기
             </button>
             <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display:none;">
             <button id="btnResetDefault" class="btn btn-outline-danger" title="초기 기본 선수단 및 포메이션으로 복원">
@@ -54,6 +54,10 @@
         <div class="metric-card highlight">
             <span class="metric-label">팀 종합 평점</span>
             <span class="metric-value" id="teamOvr">--</span>
+        </div>
+        <div class="metric-card highlight-gold">
+            <span class="metric-label">선발 11명 총점 합계</span>
+            <span class="metric-value" id="teamTotalScore">--점</span>
         </div>
         <div class="metric-card">
             <span class="metric-label">스피드 (PAC)</span>
@@ -179,6 +183,13 @@
                             <div class="card-bottom">
                                 <div class="card-name" id="cardName">김용걸</div>
                                 <div class="card-dept" id="cardDept">부산시청 체육진흥과</div>
+                                
+                                <div class="card-total-badge">
+                                    <span class="tot-label">TOTAL SCORE</span>
+                                    <span class="tot-val" id="cardTotalScore">492</span>
+                                    <span class="tot-max">/ 600</span>
+                                </div>
+
                                 <div class="card-divider"></div>
                                 <div class="card-stats-grid">
                                     <div class="card-stat-item"><span class="stat-val" id="cStatPac">84</span> <span class="stat-key">PAC</span></div>
@@ -204,9 +215,10 @@
                         <!-- 선수 세부 메모 및 버튼 -->
                         <div class="player-summary-box">
                             <div class="info-row">
+                                <span>총점: <b id="detailTotalScore" style="color:var(--accent-gold);font-size:13px;">492점</b></span>
+                                <span>종합 OVR: <b id="detailOvr">85</b></span>
                                 <span>주발: <b id="detailFoot">오른발</b></span>
                                 <span>나이: <b id="detailAge">38세</b></span>
-                                <span>등번호: <b id="detailNumber">10번</b></span>
                             </div>
                             <p class="player-notes" id="detailNotes">축구회 주장 및 중원 플레이메이커. 경기 조율 및 날카로운 킬패스 탁월</p>
                         </div>
@@ -301,7 +313,10 @@
                     <div class="stats-slider-section">
                         <div class="slider-section-header">
                             <h4>📊 FIFA 6대 핵심 능력치 설정 (30 ~ 99)</h4>
-                            <span class="realtime-ovr">계산 OVR: <b id="formPreviewOvr">75</b></span>
+                            <div class="realtime-score-box">
+                                <span class="realtime-total">총점: <b id="formPreviewTotal">450</b> / 600</span>
+                                <span class="realtime-ovr">OVR: <b id="formPreviewOvr">75</b></span>
+                            </div>
                         </div>
 
                         <div class="stat-slider-item">

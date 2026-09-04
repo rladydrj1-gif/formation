@@ -1,4 +1,3 @@
-
 // 부산시청 축구회 포메이션 매니저 JavaScript
 let players = [];
 let tactics = {
@@ -21,6 +20,7 @@ const benchCountBadge = document.getElementById('benchCountBadge');
 
 // 메트릭 바
 const teamOvrEl = document.getElementById('teamOvr');
+const teamTotalScoreEl = document.getElementById('teamTotalScore');
 const teamPacEl = document.getElementById('teamPac');
 const teamShoEl = document.getElementById('teamSho');
 const teamPasEl = document.getElementById('teamPas');
@@ -35,6 +35,7 @@ const cardPos = document.getElementById('cardPos');
 const cardName = document.getElementById('cardName');
 const cardDept = document.getElementById('cardDept');
 const cardNumber = document.getElementById('cardNumber');
+const cardTotalScore = document.getElementById('cardTotalScore');
 const cStatPac = document.getElementById('cStatPac');
 const cStatDri = document.getElementById('cStatDri');
 const cStatSho = document.getElementById('cStatSho');
@@ -42,9 +43,10 @@ const cStatDef = document.getElementById('cStatDef');
 const cStatPas = document.getElementById('cStatPas');
 const cStatPhy = document.getElementById('cStatPhy');
 const playerStyleTag = document.getElementById('playerStyleTag');
+const detailTotalScore = document.getElementById('detailTotalScore');
+const detailOvr = document.getElementById('detailOvr');
 const detailFoot = document.getElementById('detailFoot');
 const detailAge = document.getElementById('detailAge');
-const detailNumber = document.getElementById('detailNumber');
 const detailNotes = document.getElementById('detailNotes');
 
 // 탭 및 스쿼드 리스트
@@ -91,6 +93,7 @@ const valPas = document.getElementById('valPas');
 const valDri = document.getElementById('valDri');
 const valDef = document.getElementById('valDef');
 const valPhy = document.getElementById('valPhy');
+const formPreviewTotal = document.getElementById('formPreviewTotal');
 const formPreviewOvr = document.getElementById('formPreviewOvr');
 const formPosition = document.getElementById('formPosition');
 
@@ -102,6 +105,13 @@ function getPosCategory(pos) {
     if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos)) return 'pos-df';
     if (pos === 'GK') return 'pos-gk';
     return 'pos-mf';
+}
+
+// 선수 6대 스탯 합계 계산
+function calcPlayerTotal(p) {
+    if (p.total_score) return p.total_score;
+    const s = p.stats || {};
+    return (s.pac || 70) + (s.sho || 70) + (s.pas || 70) + (s.dri || 70) + (s.def || 70) + (s.phy || 70);
 }
 
 // 선수 스타일(별명) 도출
@@ -148,7 +158,7 @@ function calculatePlaystyle(player) {
     return '⚽ 밸런스형 전술 핵심 자원';
 }
 
-// 초기화 데이터 로드
+// 앱 시작
 async function initApp() {
     initRadarChart();
     await loadData();
@@ -164,7 +174,7 @@ async function loadData() {
         players = await pRes.json();
         tactics = await tRes.json();
 
-        // 선택된 선수 기본값 설정 (첫 번째 선수 또는 주장 김용걸)
+        // 선택된 선수 기본값 설정
         if (!selectedPlayer && players.length > 0) {
             selectedPlayer = players.find(p => p.id === 'p1') || players[0];
         }
@@ -260,7 +270,6 @@ function renderPitch() {
         slotEl.setAttribute('data-slot-id', slot.slotId);
         slotEl.setAttribute('data-role', slot.role);
 
-        // 드래그 앤 드롭 지원
         slotEl.draggable = true;
         slotEl.addEventListener('dragstart', handleDragStart);
         slotEl.addEventListener('dragover', handleDragOver);
@@ -307,7 +316,6 @@ function renderBench() {
     const startingMap = tactics.starting11 || {};
     const startingIds = new Set(Object.values(startingMap).filter(Boolean));
 
-    // 선발에 없는 선수들을 후보 목록으로 표시
     const benchList = players.filter(p => !startingIds.has(p.id));
     tactics.substitutes = benchList.map(p => p.id);
     benchCountBadge.textContent = `${benchList.length}명`;
@@ -326,9 +334,11 @@ function renderBench() {
         });
 
         const posClass = getPosCategory(p.position);
+        const tot = calcPlayerTotal(p);
         chip.innerHTML = `
             <span class="pos ${posClass}">${p.position || 'SUB'}</span>
             <span class="name">#${p.back_number} ${p.name}</span>
+            <span class="tot">${tot}점</span>
             <span class="ovr">${p.ovr || 75}</span>
         `;
         chip.onclick = () => selectPlayer(p);
@@ -346,6 +356,9 @@ function renderInspector() {
     cardDept.textContent = selectedPlayer.department || '부산시청';
     cardNumber.textContent = `#${selectedPlayer.back_number || 0}`;
 
+    const total = calcPlayerTotal(selectedPlayer);
+    cardTotalScore.textContent = total;
+
     const s = selectedPlayer.stats || { pac: 70, sho: 70, pas: 70, dri: 70, def: 70, phy: 70 };
     cStatPac.textContent = s.pac;
     cStatDri.textContent = s.dri;
@@ -354,14 +367,14 @@ function renderInspector() {
     cStatPas.textContent = s.pas;
     cStatPhy.textContent = s.phy;
 
+    detailTotalScore.textContent = `${total}점`;
+    detailOvr.textContent = selectedPlayer.ovr || 75;
     detailFoot.textContent = selectedPlayer.foot || '오른발';
     detailAge.textContent = `${selectedPlayer.age || 30}세`;
-    detailNumber.textContent = `${selectedPlayer.back_number || 0}번`;
     detailNotes.textContent = selectedPlayer.notes || '등록된 감독 메모가 없습니다.';
 
     playerStyleTag.textContent = calculatePlaystyle(selectedPlayer);
 
-    // 레이더 차트 업데이트
     if (radarChart) {
         radarChart.data.datasets[0].data = [s.pac, s.sho, s.pas, s.dri, s.def, s.phy];
         radarChart.update();
@@ -403,6 +416,7 @@ function renderSquadList() {
         item.className = `squad-item ${selectedPlayer && selectedPlayer.id === p.id ? 'selected' : ''}`;
         item.dataset.id = p.id;
         const posClass = getPosCategory(p.position);
+        const tot = calcPlayerTotal(p);
 
         item.innerHTML = `
             <div class="squad-item-left">
@@ -414,7 +428,10 @@ function renderSquadList() {
             </div>
             <div class="squad-item-right">
                 <span class="squad-item-pos ${posClass}">${p.position}</span>
-                <span class="squad-item-ovr">${p.ovr}</span>
+                <div class="squad-item-scores">
+                    <span class="squad-item-tot">${tot}점</span>
+                    <span class="squad-item-ovr">${p.ovr}</span>
+                </div>
             </div>
         `;
         item.onclick = () => selectPlayer(p);
@@ -441,6 +458,7 @@ function updateTeamMetrics() {
 
     if (startingPlayers.length === 0) {
         teamOvrEl.textContent = '--';
+        teamTotalScoreEl.textContent = '--점';
         teamPacEl.textContent = '--';
         teamShoEl.textContent = '--';
         teamPasEl.textContent = '--';
@@ -453,8 +471,12 @@ function updateTeamMetrics() {
 
     const n = startingPlayers.length;
     const avg = (fn) => Math.round(startingPlayers.reduce((acc, p) => acc + fn(p), 0) / n);
+    const sum = (fn) => startingPlayers.reduce((acc, p) => acc + fn(p), 0);
 
     teamOvrEl.textContent = avg(p => p.ovr || 70);
+    const totalStartingSum = sum(p => calcPlayerTotal(p));
+    teamTotalScoreEl.textContent = `${totalStartingSum.toLocaleString()}점`;
+
     teamPacEl.textContent = avg(p => (p.stats && p.stats.pac) || 70);
     teamShoEl.textContent = avg(p => (p.stats && p.stats.sho) || 70);
     teamPasEl.textContent = avg(p => (p.stats && p.stats.pas) || 70);
@@ -493,14 +515,12 @@ async function handleDrop(e) {
             const sourceSlotId = data.slotId;
             if (sourceSlotId === targetSlotId) return;
 
-            // 스왑
             const sourcePlayer = tactics.starting11[sourceSlotId];
             const targetPlayer = tactics.starting11[targetSlotId];
             tactics.starting11[sourceSlotId] = targetPlayer;
             tactics.starting11[targetSlotId] = sourcePlayer;
         } else if (data.type === 'bench') {
             const benchPlayerId = data.playerId;
-            // 이미 다른 슬롯에 있는 경우 제거
             for (const [sId, pId] of Object.entries(tactics.starting11)) {
                 if (pId === benchPlayerId) tactics.starting11[sId] = null;
             }
@@ -524,12 +544,11 @@ function openSlotSelectModal(slot) {
 
     slotCandidateList.innerHTML = '';
 
-    // 선수 리스트 추천 순 정렬: 해당 포지션 일치자 상단, 그다음 OVR 높은 순
     const sorted = [...players].sort((a, b) => {
         const aMatch = a.position === slot.role ? 1 : 0;
         const bMatch = b.position === slot.role ? 1 : 0;
         if (aMatch !== bMatch) return bMatch - aMatch;
-        return b.ovr - a.ovr;
+        return (calcPlayerTotal(b)) - (calcPlayerTotal(a));
     });
 
     sorted.forEach(p => {
@@ -539,6 +558,7 @@ function openSlotSelectModal(slot) {
 
         item.className = `slot-candidate-item ${isAlreadyStarting ? 'already-starting' : ''}`;
         const posClass = getPosCategory(p.position);
+        const tot = calcPlayerTotal(p);
 
         item.innerHTML = `
             <div>
@@ -548,16 +568,16 @@ function openSlotSelectModal(slot) {
                 ${isCurrent ? '<span style="color:var(--accent-gold);font-size:11px;font-weight:bold;margin-left:6px;">[현재 배치됨]</span>' : ''}
                 ${isAlreadyStarting ? '<span style="color:#8a99b5;font-size:11px;margin-left:6px;">[다른 포지션 선발]</span>' : ''}
             </div>
-            <div style="font-size:15px;font-weight:900;color:var(--accent-gold);">
-                ${p.ovr}
+            <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                <span style="font-size:11px;font-weight:700;color:var(--accent-gold-light);">${tot}점</span>
+                <span style="font-size:15px;font-weight:900;color:var(--accent-gold);">${p.ovr}</span>
             </div>
         `;
 
         item.onclick = async () => {
-            // 다른 슬롯에 이미 있으면 그 슬롯은 비우거나 교체
             for (const [sId, pId] of Object.entries(tactics.starting11)) {
                 if (pId === p.id && sId !== selectedSlotId) {
-                    tactics.starting11[sId] = currentAssignedId; // 맞교환
+                    tactics.starting11[sId] = currentAssignedId;
                 }
             }
             tactics.starting11[selectedSlotId] = p.id;
@@ -586,7 +606,7 @@ async function saveTacticsToServer() {
     }
 }
 
-// 선수 모달 실시간 슬라이더 OVR 계산
+// 선수 모달 실시간 슬라이더 OVR 및 총점 계산
 function updateFormOvrPreview() {
     const pac = parseInt(sliderPac.value);
     const sho = parseInt(sliderSho.value);
@@ -602,6 +622,9 @@ function updateFormOvrPreview() {
     valDri.textContent = dri;
     valDef.textContent = def;
     valPhy.textContent = phy;
+
+    const total = pac + sho + pas + dri + def + phy;
+    formPreviewTotal.textContent = total;
 
     let ovr = 75;
     if (['ST', 'CF'].includes(pos)) {
@@ -621,7 +644,7 @@ function updateFormOvrPreview() {
     } else if (pos === 'GK') {
         ovr = def * 0.35 + phy * 0.25 + pac * 0.15 + pas * 0.15 + dri * 0.10;
     } else {
-        ovr = (pac + sho + pas + dri + def + phy) / 6.0;
+        ovr = total / 6.0;
     }
     formPreviewOvr.textContent = Math.round(ovr);
 }
@@ -665,7 +688,6 @@ function openPlayerModal(playerToEdit = null) {
 
 // 이벤트 리스너 등록
 function setupEventListeners() {
-    // 탭 전환
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             tabBtns.forEach(b => b.classList.remove('active'));
@@ -675,14 +697,12 @@ function setupEventListeners() {
         });
     });
 
-    // 포메이션 변경
     formationSelect.addEventListener('change', async (e) => {
         tactics.currentFormation = e.target.value;
         await saveTacticsToServer();
         renderAll();
     });
 
-    // 검색 및 필터
     playerSearchInput.addEventListener('input', renderSquadList);
     pillBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -692,12 +712,10 @@ function setupEventListeners() {
         });
     });
 
-    // 슬라이더 이벤트
     [sliderPac, sliderSho, sliderPas, sliderDri, sliderDef, sliderPhy, formPosition].forEach(el => {
         el.addEventListener('input', updateFormOvrPreview);
     });
 
-    // 모달 버튼들
     btnAddNewPlayer.addEventListener('click', () => openPlayerModal());
     btnEditCurrentPlayer.addEventListener('click', () => {
         if (selectedPlayer) openPlayerModal(selectedPlayer);
@@ -724,10 +742,16 @@ function setupEventListeners() {
         }
     });
 
-    // 선수 폼 저장
     playerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const playerId = document.getElementById('formPlayerId').value;
+        const pac = parseInt(sliderPac.value);
+        const sho = parseInt(sliderSho.value);
+        const pas = parseInt(sliderPas.value);
+        const dri = parseInt(sliderDri.value);
+        const def = parseInt(sliderDef.value);
+        const phy = parseInt(sliderPhy.value);
+
         const payload = {
             id: playerId || null,
             back_number: parseInt(document.getElementById('formBackNumber').value),
@@ -737,14 +761,8 @@ function setupEventListeners() {
             position: document.getElementById('formPosition').value,
             foot: document.getElementById('formFoot').value,
             notes: document.getElementById('formNotes').value.trim(),
-            stats: {
-                pac: parseInt(sliderPac.value),
-                sho: parseInt(sliderSho.value),
-                pas: parseInt(sliderPas.value),
-                dri: parseInt(sliderDri.value),
-                def: parseInt(sliderDef.value),
-                phy: parseInt(sliderPhy.value)
-            }
+            stats: { pac, sho, pas, dri, def, phy },
+            total_score: pac + sho + pas + dri + def + phy
         };
 
         try {
@@ -764,7 +782,6 @@ function setupEventListeners() {
         }
     });
 
-    // 라인업 이미지 저장 (html2canvas)
     btnExportImage.addEventListener('click', async () => {
         const captureArea = document.getElementById('captureArea');
         const watermark = captureArea.querySelector('.capture-watermark');
@@ -793,12 +810,10 @@ function setupEventListeners() {
         }
     });
 
-    // 엑셀 내보내기
     btnExportExcel.addEventListener('click', () => {
         window.location.href = '/api/export-excel';
     });
 
-    // 엑셀 가져오기
     btnImportExcel.addEventListener('click', () => {
         excelFileInput.click();
     });
@@ -817,7 +832,7 @@ function setupEventListeners() {
             });
             const data = await res.json();
             if (data.success) {
-                alert(`총 ${data.count}명의 선수가 성공적으로 등록되었습니다!`);
+                alert(`총 ${data.count}명의 선수와 점수가 성공적으로 등록되었습니다!`);
                 await loadData();
             } else {
                 alert('엑셀 가져오기 실패: ' + (data.error || '알 수 없는 오류'));
@@ -829,9 +844,8 @@ function setupEventListeners() {
         }
     });
 
-    // 기본값 복원
     btnResetDefault.addEventListener('click', async () => {
-        if (confirm('초기 부산시청 선수단 18명 및 기본 포메이션으로 복원하시겠습니까?\n(현재 수정한 데이터가 기본값으로 덮어씌워집니다)')) {
+        if (confirm('초기 부산시청 선수단 18명 및 기본 포메이션으로 복원하시겠습니까?\\n(현재 수정한 데이터가 기본값으로 덮어씌워집니다)')) {
             try {
                 const res = await fetch('/api/reset-default', { method: 'POST' });
                 const data = await res.json();
@@ -846,5 +860,4 @@ function setupEventListeners() {
     });
 }
 
-// 앱 시작
 window.addEventListener('DOMContentLoaded', initApp);
