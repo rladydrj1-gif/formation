@@ -21,6 +21,10 @@ def get_writable_dir():
     if getattr(sys, 'frozen', False):
         exe_dir = os.path.dirname(sys.executable)
         return exe_dir
+    if os.environ.get('VERCEL') or not os.access(os.path.dirname(os.path.abspath(__file__)), os.W_OK):
+        tmp_dir = os.path.join('/tmp', 'formation_data')
+        os.makedirs(tmp_dir, exist_ok=True)
+        return tmp_dir
     return os.path.dirname(os.path.abspath(__file__))
 
 BASE_DIR = get_base_dir()
@@ -34,6 +38,11 @@ DEFAULT_PLAYERS_FILE = os.path.join(BASE_DIR, 'data', 'default_players.json')
 DEFAULT_TACTICS_FILE = os.path.join(BASE_DIR, 'data', 'tactics.json')
 
 def init_files():
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+    except Exception:
+        pass
+
     if not os.path.exists(PLAYERS_FILE):
         if os.path.exists(DEFAULT_PLAYERS_FILE):
             with open(DEFAULT_PLAYERS_FILE, 'r', encoding='utf-8') as sf:
@@ -152,8 +161,9 @@ def normalize_positions(positions_input, fallback_pos='CM'):
 def load_players():
     if not os.path.exists(PLAYERS_FILE):
         init_files()
+    target_file = PLAYERS_FILE if os.path.exists(PLAYERS_FILE) else DEFAULT_PLAYERS_FILE
     try:
-        with open(PLAYERS_FILE, 'r', encoding='utf-8') as f:
+        with open(target_file, 'r', encoding='utf-8') as f:
             players = json.load(f)
             for p in players:
                 pos = p.get('position', 'CM')
@@ -179,8 +189,9 @@ def save_players(players):
 def load_tactics():
     if not os.path.exists(TACTICS_FILE):
         init_files()
+    target_file = TACTICS_FILE if os.path.exists(TACTICS_FILE) else DEFAULT_TACTICS_FILE
     try:
-        with open(TACTICS_FILE, 'r', encoding='utf-8') as f:
+        with open(target_file, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception:
         return {}

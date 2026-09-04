@@ -309,11 +309,44 @@ function calculatePlaystyle(player) {
     return '⚽ 밸런스형 전술 핵심 자원';
 }
 
+let lastStateHash = '';
+
+function checkRemoteChanges() {
+    if (document.hidden) return;
+
+    Promise.all([
+        fetch('/api/players').then(r => r.json()),
+        fetch('/api/tactics').then(r => r.json())
+    ]).then(([latestPlayers, latestTactics]) => {
+        const newHash = JSON.stringify({
+            p: latestPlayers.map(p => ({ id: p.id, ovr: p.ovr, tot: p.total_score, s: p.stats })),
+            t: latestTactics.starting11,
+            f: latestTactics.currentFormation
+        });
+
+        if (lastStateHash && lastStateHash !== newHash) {
+            players = latestPlayers;
+            tactics = latestTactics;
+            if (formationSelect) formationSelect.value = tactics.currentFormation || '4-3-3';
+            if (currentFormationLabel) currentFormationLabel.textContent = tactics.currentFormation || '4-3-3';
+            if (selectedPlayer) {
+                const found = players.find(p => p.id === selectedPlayer.id);
+                if (found) selectedPlayer = found;
+            }
+            renderAll();
+            showToast('⚡ 동료 코치의 최신 전술/점수 변경사항이 실시간 동기화되었습니다.', 'info');
+        }
+        lastStateHash = newHash;
+    }).catch(() => {});
+}
+
 async function initApp() {
     initRadarChart();
     await loadData();
     setupEventListeners();
     initSocket();
+    // Vercel 서버리스 환경 등에서도 끊김 없는 실시간 동기화를 위한 3.5초 스마트 폴링
+    setInterval(checkRemoteChanges, 3500);
 }
 
 async function loadData() {
