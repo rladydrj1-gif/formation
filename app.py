@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 import sys
 import json
@@ -7,7 +7,6 @@ from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
 
 def get_base_dir():
     if getattr(sys, 'frozen', False):
@@ -83,14 +82,28 @@ def calculate_ovr(pos, stats):
         ovr = (pac + sho + pas + dri + def_ + phy) / 6.0
     return int(round(ovr))
 
+def normalize_positions(positions_input, fallback_pos='CM'):
+    if isinstance(positions_input, list):
+        clean = [str(p).strip().upper() for p in positions_input if str(p).strip()]
+        return clean[:3] if clean else [fallback_pos]
+    elif isinstance(positions_input, str):
+        parts = [p.strip().upper() for p in positions_input.replace('/', ',').split(',') if p.strip()]
+        return parts[:3] if parts else [fallback_pos]
+    return [fallback_pos]
+
 def load_players():
     if not os.path.exists(PLAYERS_FILE):
         init_files()
     try:
         with open(PLAYERS_FILE, 'r', encoding='utf-8') as f:
             players = json.load(f)
-            # Ensure each player has total_score and ovr
             for p in players:
+                pos = p.get('position', 'CM')
+                if 'positions' not in p or not p['positions']:
+                    p['positions'] = [pos]
+                else:
+                    p['positions'] = normalize_positions(p['positions'], pos)
+                p['position'] = p['positions'][0]
                 s = p.get('stats', {})
                 if 'total_score' not in p:
                     p['total_score'] = sum([s.get('pac', 70), s.get('sho', 70), s.get('pas', 70), s.get('dri', 70), s.get('def', 70), s.get('phy', 70)])
@@ -115,6 +128,76 @@ def save_tactics(tactics):
     with open(TACTICS_FILE, 'w', encoding='utf-8') as f:
         json.dump(tactics, f, ensure_ascii=False, indent=2)
 
+# AI Lineup Recommendation Algorithm
+def calculate_ai_lineup(formation_key):
+    tactics = load_tactics()
+    players = load_players()
+    formConfig = tactics.get('formations', {}).get(formation_key)
+    if not formConfig or not players:
+        return {}
+
+    slots = formConfig.get('slots', [])
+    if len(players) < len(slots):
+        return {}
+
+    def get_slot_score(p, role):
+        pos_list = p.get('positions', [p.get('position', 'CM')])
+        ovr = p.get('ovr', 75)
+        stats = p.get('stats', {})
+
+        if role in pos_list:
+            idx = pos_list.index(role)
+            pos_mult = 1.10 if idx == 0 else (1.05 if idx == 1 else 1.02)
+        else:
+            adj_groups = [
+                {'ST','CF'}, {'LW','LM','RW','RM'}, {'CAM','CM'},
+                {'CDM','CM'}, {'LB','LWB'}, {'RB','RWB'}, {'CB','CDM'}, {'GK'}
+            ]
+            is_adj = any(role in g and any(pos in g for pos in pos_list) for g in adj_groups)
+            if is_adj:
+                pos_mult = 0.88
+            else:
+                pos_mult = 0.10 if (role == 'GK' or 'GK' in pos_list) else 0.70
+
+        return ovr * pos_mult
+
+    available_pids = set(p['id'] for p in players)
+    assignment = {}
+
+    # 1. Assign GK slots
+    gk_slots = [s for s in slots if s['role'] == 'GK']
+    for s in gk_slots:
+        best_p = max(players, key=lambda p: get_slot_score(p, 'GK') if p['id'] in available_pids else -999)
+        assignment[s['slotId']] = best_p['id']
+        available_pids.remove(best_p['id'])
+
+    # 2. Sort other slots by position rarity
+    other_slots = [s for s in slots if s['role'] != 'GK']
+    other_slots.sort(key=lambda s: sum(1 for p in players if s['role'] in p.get('positions', [])))
+
+    for s in other_slots:
+        best_p = max(players, key=lambda p: get_slot_score(p, s['role']) if p['id'] in available_pids else -999)
+        assignment[s['slotId']] = best_p['id']
+        available_pids.remove(best_p['id'])
+
+    # 3. 2-opt optimization
+    for _ in range(6):
+        for s1 in slots:
+            for s2 in slots:
+                if s1['slotId'] == s2['slotId']:
+                    continue
+                p1 = next((p for p in players if p['id'] == assignment[s1['slotId']]), None)
+                p2 = next((p for p in players if p['id'] == assignment[s2['slotId']]), None)
+                if not p1 or not p2:
+                    continue
+                curr_score = get_slot_score(p1, s1['role']) + get_slot_score(p2, s2['role'])
+                swap_score = get_slot_score(p2, s1['role']) + get_slot_score(p1, s2['role'])
+                if swap_score > curr_score:
+                    assignment[s1['slotId']] = p2['id']
+                    assignment[s2['slotId']] = p1['id']
+
+    return assignment
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -127,13 +210,18 @@ def get_players():
 def save_player():
     data = request.json
     players = load_players()
-    
+
     player_id = data.get('id')
     stats = data.get('stats', {'pac': 70, 'sho': 70, 'pas': 70, 'dri': 70, 'def': 70, 'phy': 70})
-    pos = data.get('position', 'CM')
-    ovr = calculate_ovr(pos, stats)
+
+    positions = normalize_positions(data.get('positions', [data.get('position', 'CM')]))
+    primary_pos = positions[0]
+
+    ovr = calculate_ovr(primary_pos, stats)
     total_score = sum([stats.get('pac', 70), stats.get('sho', 70), stats.get('pas', 70), stats.get('dri', 70), stats.get('def', 70), stats.get('phy', 70)])
 
+    data['positions'] = positions
+    data['position'] = primary_pos
     data['ovr'] = ovr
     data['total_score'] = total_score
 
@@ -181,6 +269,16 @@ def update_tactics():
     save_tactics(data)
     return jsonify({'success': True})
 
+@app.route('/api/tactics/recommend', methods=['GET'])
+def get_recommendation():
+    formation_key = request.args.get('formation', '4-3-3')
+    recommended_lineup = calculate_ai_lineup(formation_key)
+    return jsonify({
+        'success': True,
+        'formation': formation_key,
+        'recommended11': recommended_lineup
+    })
+
 @app.route('/api/reset-default', methods=['POST'])
 def reset_default():
     if os.path.exists(DEFAULT_PLAYERS_FILE):
@@ -199,17 +297,26 @@ def export_excel():
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = '선수단_명단_및_능력치'
+    ws.title = '선수단_명단_입력양식'
+
+    ws.merge_cells('A1:R1')
+    title_cell = ws['A1']
+    title_cell.value = '★ 부산시청 축구회 선수단 명단 및 FIFA 6대 능력치 입력 양식 (J~O열 점수 입력시 P열 총점/Q열 OVR 자동 계산, 포지션 최대 3개) ★'
+    title_cell.font = Font(name='맑은 고딕', size=11, bold=True, color='FFFFFF')
+    title_cell.fill = PatternFill(start_color='0C2D48', end_color='0C2D48', fill_type='solid')
+    title_cell.alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 28
 
     headers = [
-        '선수ID', '등번호', '이름', '소속부서', '나이', '주포지션', '주발',
+        '선수ID', '등번호', '이름', '소속부서', '나이',
+        '주포지션(1순위)', '부포지션(2순위)', '부포지션(3순위)', '주발',
         'PAC(주력)', 'SHO(슈팅)', 'PAS(패스)', 'DRI(드리블)', 'DEF(수비)', 'PHY(피지컬)',
         '총점(6개합계)', '종합평점(OVR)', '선수특징/메모'
     ]
     ws.append(headers)
+    ws.row_dimensions[2].height = 24
 
-    # Styles
-    header_font = Font(name='맑은 고딕', size=11, bold=True, color='FFFFFF')
+    header_font = Font(name='맑은 고딕', size=10, bold=True, color='FFFFFF')
     header_fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
     total_hdr_fill = PatternFill(start_color='C65911', end_color='C65911', fill_type='solid')
 
@@ -225,24 +332,27 @@ def export_excel():
         bottom=Side(style='thin', color='D9D9D9')
     )
 
-    # Apply Header Styles
     for col_idx in range(1, len(headers) + 1):
-        cell = ws.cell(row=1, column=col_idx)
+        cell = ws.cell(row=2, column=col_idx)
         cell.font = header_font
-        cell.fill = total_hdr_fill if col_idx in [14, 15] else header_fill
+        cell.fill = total_hdr_fill if col_idx in [16, 17] else header_fill
         cell.alignment = center_align
 
-    # Add Player Rows
     for idx, p in enumerate(players):
-        row_num = idx + 2
+        row_num = idx + 3
         stats = p.get('stats', {})
+        pos_list = p.get('positions', [p.get('position', 'CM')])
+        p1 = pos_list[0] if len(pos_list) > 0 else 'CM'
+        p2 = pos_list[1] if len(pos_list) > 1 else ''
+        p3 = pos_list[2] if len(pos_list) > 2 else ''
+
         row = [
             p.get('id', f'p{idx+1}'),
             p.get('back_number', idx + 1),
             p.get('name', ''),
             p.get('department', ''),
             p.get('age', 30),
-            p.get('position', 'CM'),
+            p1, p2, p3,
             p.get('foot', '오른발'),
             stats.get('pac', 70),
             stats.get('sho', 70),
@@ -250,25 +360,49 @@ def export_excel():
             stats.get('dri', 70),
             stats.get('def', 70),
             stats.get('phy', 70),
-            f'=SUM(H{row_num}:M{row_num})',
-            f'=ROUND(AVERAGE(H{row_num}:M{row_num}), 0)',
+            f'=SUM(J{row_num}:O{row_num})',
+            f'=ROUND(AVERAGE(J{row_num}:O{row_num}), 0)',
             p.get('notes', '')
         ]
         ws.append(row)
+        ws.row_dimensions[row_num].height = 20
 
         for col_idx in range(1, len(headers) + 1):
             cell = ws.cell(row=row_num, column=col_idx)
-            cell.font = bold_font if col_idx in [2, 3, 14, 15] else data_font
+            cell.font = bold_font if col_idx in [2, 3, 16, 17] else data_font
             cell.border = thin_border
-            if col_idx in [14, 15]:
+            if col_idx in [16, 17]:
                 cell.fill = total_cell_fill
-            cell.alignment = left_align if col_idx in [3, 4, 16] else center_align
+            cell.alignment = left_align if col_idx in [3, 4, 18] else center_align
 
-    # Auto-adjust column widths
+    # Add 20 extra blank rows with formulas
+    start_blank = len(players) + 3
+    for i in range(20):
+        row_num = start_blank + i
+        row = [
+            f'p_new_{i+1}',
+            '', '', '', '',
+            'CM', '', '', '오른발',
+            '', '', '', '', '', '',
+            f'=IF(COUNT(J{row_num}:O{row_num})>0, SUM(J{row_num}:O{row_num}), "")',
+            f'=IF(COUNT(J{row_num}:O{row_num})>0, ROUND(AVERAGE(J{row_num}:O{row_num}), 0), "")',
+            ''
+        ]
+        ws.append(row)
+        ws.row_dimensions[row_num].height = 20
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws.cell(row=row_num, column=col_idx)
+            cell.font = data_font
+            cell.border = thin_border
+            if col_idx in [16, 17]:
+                cell.fill = total_cell_fill
+            cell.alignment = left_align if col_idx in [3, 4, 18] else center_align
+
     column_widths = {
-        'A': 10, 'B': 8, 'C': 12, 'D': 16, 'E': 8, 'F': 10, 'G': 10,
-        'H': 12, 'I': 12, 'J': 12, 'K': 12, 'L': 12, 'M': 12,
-        'N': 15, 'O': 14, 'P': 40
+        'A': 10, 'B': 8, 'C': 12, 'D': 16, 'E': 8,
+        'F': 14, 'G': 14, 'H': 14, 'I': 10,
+        'J': 12, 'K': 12, 'L': 12, 'M': 12, 'N': 12, 'O': 12,
+        'P': 15, 'Q': 14, 'R': 35
     }
     for col_letter, width in column_widths.items():
         ws.column_dimensions[col_letter].width = width
@@ -281,7 +415,7 @@ def export_excel():
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
-        download_name='부산시청_축구회_선수명단_및_능력치.xlsx'
+        download_name='부산시청_축구회_선수명단_입력양식.xlsx'
     )
 
 @app.route('/api/import-excel', methods=['POST'])
@@ -293,14 +427,35 @@ def import_excel():
         return jsonify({'success': False, 'error': '선택된 파일이 없습니다.'}), 400
 
     try:
-        df = pd.read_excel(file)
+        # Load workbook with openpyxl or pandas
+        df = pd.read_excel(file, header=1)  # header on row 2 (index 1)
+        if '이름' not in df.columns:
+            # fallback to header=0
+            file.seek(0)
+            df = pd.read_excel(file, header=0)
+
         new_players = []
         for idx, row in df.iterrows():
             name = str(row.get('이름', '')).strip()
-            if not name or name == 'nan':
+            if not name or name == 'nan' or '★' in name:
                 continue
 
-            pos = str(row.get('주포지션', 'CM')).strip().upper()
+            # Read up to 3 positions
+            pos1 = str(row.get('주포지션(1순위)', row.get('주포지션', 'CM'))).strip().upper()
+            pos2 = str(row.get('부포지션(2순위)', '')).strip().upper()
+            pos3 = str(row.get('부포지션(3순위)', '')).strip().upper()
+
+            pos_candidates = []
+            for p_item in [pos1, pos2, pos3]:
+                if p_item and p_item != 'NAN':
+                    for sub in p_item.replace('/', ',').split(','):
+                        sub_clean = sub.strip()
+                        if sub_clean and sub_clean not in pos_candidates:
+                            pos_candidates.append(sub_clean)
+
+            positions = pos_candidates[:3] if pos_candidates else ['CM']
+            primary_pos = positions[0]
+
             pac = int(row.get('PAC(주력)', 70)) if pd.notna(row.get('PAC(주력)')) else 70
             sho = int(row.get('SHO(슈팅)', 70)) if pd.notna(row.get('SHO(슈팅)')) else 70
             pas = int(row.get('PAS(패스)', 70)) if pd.notna(row.get('PAS(패스)')) else 70
@@ -308,16 +463,9 @@ def import_excel():
             def_ = int(row.get('DEF(수비)', 70)) if pd.notna(row.get('DEF(수비)')) else 70
             phy = int(row.get('PHY(피지컬)', 70)) if pd.notna(row.get('PHY(피지컬)')) else 70
 
-            stats = {
-                'pac': pac,
-                'sho': sho,
-                'pas': pas,
-                'dri': dri,
-                'def': def_,
-                'phy': phy
-            }
+            stats = {'pac': pac, 'sho': sho, 'pas': pas, 'dri': dri, 'def': def_, 'phy': phy}
             total_score = pac + sho + pas + dri + def_ + phy
-            ovr = calculate_ovr(pos, stats)
+            ovr = calculate_ovr(primary_pos, stats)
 
             pid = str(row.get('선수ID', '')).strip()
             if not pid or pid == 'nan':
@@ -329,8 +477,9 @@ def import_excel():
                 'name': name,
                 'department': str(row.get('소속부서', '부산시청')).strip() if pd.notna(row.get('소속부서')) else '부산시청',
                 'age': int(row.get('나이', 30)) if pd.notna(row.get('나이')) else 30,
-                'position': pos,
-                'secondary_positions': [],
+                'positions': positions,
+                'position': primary_pos,
+                'secondary_positions': positions[1:],
                 'foot': str(row.get('주발', '오른발')).strip() if pd.notna(row.get('주발')) else '오른발',
                 'stats': stats,
                 'total_score': total_score,

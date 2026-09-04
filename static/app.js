@@ -6,17 +6,37 @@ let tactics = {
     starting11: {},
     substitutes: []
 };
+let aiRecommendedLineup = {};
+let currentViewMode = 'single'; // 'single' or 'dual'
 let selectedPlayer = null;
 let selectedSlotId = null;
 let radarChart = null;
 
 // DOM 요소 참조
+const btnViewSingle = document.getElementById('btnViewSingle');
+const btnViewDual = document.getElementById('btnViewDual');
+const singleViewLayout = document.getElementById('singleViewLayout');
+const dualCompareLayout = document.getElementById('dualCompareLayout');
+const singleMetricsBar = document.getElementById('singleMetricsBar');
+
 const formationSelect = document.getElementById('formationSelect');
 const currentFormationLabel = document.getElementById('currentFormationLabel');
 const watermarkFormation = document.getElementById('watermarkFormation');
 const slotsLayer = document.getElementById('slotsLayer');
 const benchPlayersList = document.getElementById('benchPlayersList');
 const benchCountBadge = document.getElementById('benchCountBadge');
+
+// 듀얼 비교 뷰 DOM
+const userDualSlotsLayer = document.getElementById('userDualSlotsLayer');
+const aiDualSlotsLayer = document.getElementById('aiDualSlotsLayer');
+const dualUserOvr = document.getElementById('dualUserOvr');
+const dualUserTotal = document.getElementById('dualUserTotal');
+const dualAiOvr = document.getElementById('dualAiOvr');
+const dualAiTotal = document.getElementById('dualAiTotal');
+const vsStatsDiff = document.getElementById('vsStatsDiff');
+const btnApplyAiToUser = document.getElementById('btnApplyAiToUser');
+const colUserStats = document.getElementById('colUserStats');
+const colAiStats = document.getElementById('colAiStats');
 
 // 메트릭 바
 const teamOvrEl = document.getElementById('teamOvr');
@@ -32,6 +52,7 @@ const teamAgeEl = document.getElementById('teamAge');
 // 인스펙터 & FIFA 카드
 const cardOvr = document.getElementById('cardOvr');
 const cardPos = document.getElementById('cardPos');
+const cardMultiPos = document.getElementById('cardMultiPos');
 const cardName = document.getElementById('cardName');
 const cardDept = document.getElementById('cardDept');
 const cardNumber = document.getElementById('cardNumber');
@@ -45,6 +66,7 @@ const cStatPhy = document.getElementById('cStatPhy');
 const playerStyleTag = document.getElementById('playerStyleTag');
 const detailTotalScore = document.getElementById('detailTotalScore');
 const detailOvr = document.getElementById('detailOvr');
+const detailPositions = document.getElementById('detailPositions');
 const detailFoot = document.getElementById('detailFoot');
 const detailAge = document.getElementById('detailAge');
 const detailNotes = document.getElementById('detailNotes');
@@ -80,7 +102,10 @@ const excelFileInput = document.getElementById('excelFileInput');
 const btnResetDefault = document.getElementById('btnResetDefault');
 const btnClearLineup = document.getElementById('btnClearLineup');
 
-// 슬라이더 요소들
+// 슬라이더 및 포지션 요소
+const formPos1 = document.getElementById('formPos1');
+const formPos2 = document.getElementById('formPos2');
+const formPos3 = document.getElementById('formPos3');
 const sliderPac = document.getElementById('sliderPac');
 const sliderSho = document.getElementById('sliderSho');
 const sliderPas = document.getElementById('sliderPas');
@@ -95,9 +120,7 @@ const valDef = document.getElementById('valDef');
 const valPhy = document.getElementById('valPhy');
 const formPreviewTotal = document.getElementById('formPreviewTotal');
 const formPreviewOvr = document.getElementById('formPreviewOvr');
-const formPosition = document.getElementById('formPosition');
 
-// 포지션 분류
 function getPosCategory(pos) {
     pos = (pos || '').toUpperCase();
     if (['ST', 'CF', 'LW', 'RW'].includes(pos)) return 'pos-fw';
@@ -107,14 +130,12 @@ function getPosCategory(pos) {
     return 'pos-mf';
 }
 
-// 선수 6대 스탯 합계 계산
 function calcPlayerTotal(p) {
     if (p.total_score) return p.total_score;
     const s = p.stats || {};
     return (s.pac || 70) + (s.sho || 70) + (s.pas || 70) + (s.dri || 70) + (s.def || 70) + (s.phy || 70);
 }
 
-// 선수 스타일(별명) 도출
 function calculatePlaystyle(player) {
     const s = player.stats || {};
     const pos = (player.position || '').toUpperCase();
@@ -135,7 +156,7 @@ function calculatePlaystyle(player) {
         return '⭐ 완전체 완성형 육각형';
     }
     if (pos === 'GK') {
-        return (s.def >= 85) ? '🧤 통곡의 슈퍼 세이브 골키퍼' : '🧤 든든한 안정형 골키퍼';
+        return (s.def >= 85) ? '🧤 통곡의 슈퍼 세이브 GK' : '🧤 든든한 안정형 GK';
     }
     if (statsList[0].key === 'PAC' && statsList[1].key === 'DRI') {
         return '⚡ 폭발적인 스피드 크랙';
@@ -152,13 +173,9 @@ function calculatePlaystyle(player) {
     if (statsList[0].key === 'PAC' && statsList[1].key === 'DEF') {
         return '🚀 기동력 만점 윙백 스피드스터';
     }
-    if (statsList[0].key === 'SHO') {
-        return '🎯 원샷원킬 해결사 골게터';
-    }
     return '⚽ 밸런스형 전술 핵심 자원';
 }
 
-// 앱 시작
 async function initApp() {
     initRadarChart();
     await loadData();
@@ -174,15 +191,27 @@ async function loadData() {
         players = await pRes.json();
         tactics = await tRes.json();
 
-        // 선택된 선수 기본값 설정
         if (!selectedPlayer && players.length > 0) {
             selectedPlayer = players.find(p => p.id === 'p1') || players[0];
         }
 
+        await fetchAiRecommendation();
         renderAll();
     } catch (err) {
         console.error('데이터 로드 실패:', err);
-        alert('데이터를 불러오는데 실패했습니다.');
+    }
+}
+
+async function fetchAiRecommendation() {
+    try {
+        const formation = tactics.currentFormation || '4-3-3';
+        const res = await fetch(`/api/tactics/recommend?formation=${formation}`);
+        const data = await res.json();
+        if (data.success) {
+            aiRecommendedLineup = data.recommended11 || {};
+        }
+    } catch (err) {
+        console.error('AI 추천 로드 실패:', err);
     }
 }
 
@@ -192,9 +221,9 @@ function renderAll() {
     renderInspector();
     renderSquadList();
     updateTeamMetrics();
+    renderDualView();
 }
 
-// 육각형 레이더 차트 초기화
 function initRadarChart() {
     const ctx = document.getElementById('radarChartCanvas').getContext('2d');
     radarChart = new Chart(ctx, {
@@ -206,12 +235,10 @@ function initRadarChart() {
                 data: [75, 75, 75, 75, 75, 75],
                 backgroundColor: 'rgba(245, 176, 38, 0.35)',
                 borderColor: '#f5b026',
-                borderWidth: 2.5,
+                borderWidth: 2,
                 pointBackgroundColor: '#ffd56b',
                 pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#ffd56b',
-                pointRadius: 4
+                pointRadius: 3
             }]
         },
         options: {
@@ -223,7 +250,7 @@ function initRadarChart() {
                     grid: { color: 'rgba(255, 255, 255, 0.12)' },
                     pointLabels: {
                         color: '#d1dcfa',
-                        font: { size: 11, weight: 'bold' }
+                        font: { size: 9.5, weight: 'bold' }
                     },
                     suggestedMin: 30,
                     suggestedMax: 100,
@@ -231,25 +258,17 @@ function initRadarChart() {
                         stepSize: 20,
                         color: 'rgba(255, 255, 255, 0.4)',
                         backdropColor: 'transparent',
-                        font: { size: 9 }
+                        font: { size: 8 }
                     }
                 }
             },
             plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${context.raw}점`;
-                        }
-                    }
-                }
+                legend: { display: false }
             }
         }
     });
 }
 
-// 피치 보드 렌더링
 function renderPitch() {
     const curFormationKey = tactics.currentFormation || '4-3-3';
     formationSelect.value = curFormationKey;
@@ -268,7 +287,6 @@ function renderPitch() {
         slotEl.style.left = `${slot.x}%`;
         slotEl.style.top = `${slot.y}%`;
         slotEl.setAttribute('data-slot-id', slot.slotId);
-        slotEl.setAttribute('data-role', slot.role);
 
         slotEl.draggable = true;
         slotEl.addEventListener('dragstart', handleDragStart);
@@ -277,7 +295,6 @@ function renderPitch() {
 
         const assignedPlayerId = startingMap[slot.slotId];
         const player = players.find(p => p.id === assignedPlayerId);
-
         const posClass = getPosCategory(slot.role);
 
         if (player) {
@@ -301,16 +318,13 @@ function renderPitch() {
                 </div>
                 <div class="slot-name-plate">선수 배치</div>
             `;
-            slotEl.onclick = () => {
-                openSlotSelectModal(slot);
-            };
+            slotEl.onclick = () => openSlotSelectModal(slot);
         }
 
         slotsLayer.appendChild(slotEl);
     });
 }
 
-// 벤치 후보 선수 렌더링
 function renderBench() {
     benchPlayersList.innerHTML = '';
     const startingMap = tactics.starting11 || {};
@@ -321,7 +335,7 @@ function renderBench() {
     benchCountBadge.textContent = `${benchList.length}명`;
 
     if (benchList.length === 0) {
-        benchPlayersList.innerHTML = '<span style="font-size:12px;color:var(--text-muted);padding:6px;">대기 선수가 없습니다.</span>';
+        benchPlayersList.innerHTML = '<span style="font-size:11px;color:var(--text-muted);padding:4px;">대기 선수가 없습니다.</span>';
         return;
     }
 
@@ -346,12 +360,132 @@ function renderBench() {
     });
 }
 
-// 인스펙터 (FIFA 카드 & 레이더 차트)
+// 듀얼 동시 비교 뷰 렌더링
+function renderDualView() {
+    const curFormationKey = tactics.currentFormation || '4-3-3';
+    const formConfig = tactics.formations[curFormationKey];
+    if (!formConfig) return;
+
+    userDualSlotsLayer.innerHTML = '';
+    aiDualSlotsLayer.innerHTML = '';
+
+    const userMap = tactics.starting11 || {};
+    const aiMap = aiRecommendedLineup || {};
+
+    // 1. 감독 직접 배치 구장
+    formConfig.slots.forEach(slot => {
+        const el = document.createElement('div');
+        el.className = 'pitch-slot';
+        el.style.left = `${slot.x}%`;
+        el.style.top = `${slot.y}%`;
+        el.dataset.slotId = slot.slotId;
+        el.draggable = true;
+        el.addEventListener('dragstart', handleDragStart);
+        el.addEventListener('dragover', handleDragOver);
+        el.addEventListener('drop', handleDrop);
+
+        const p = players.find(item => item.id === userMap[slot.slotId]);
+        const posClass = getPosCategory(slot.role);
+        if (p) {
+            el.innerHTML = `
+                <div class="slot-token">
+                    <span class="slot-role-badge ${posClass}">${slot.label}</span>
+                    <span class="slot-ovr-badge">${p.ovr}</span>
+                    <span class="slot-number">${p.back_number}</span>
+                </div>
+                <div class="slot-name-plate">${p.name}</div>
+            `;
+            el.onclick = () => openSlotSelectModal(slot);
+        } else {
+            el.innerHTML = `
+                <div class="slot-token empty">
+                    <span class="slot-role-badge ${posClass}">${slot.label}</span>
+                    <span class="slot-empty-icon">+</span>
+                </div>
+                <div class="slot-name-plate">선수 배치</div>
+            `;
+            el.onclick = () => openSlotSelectModal(slot);
+        }
+        userDualSlotsLayer.appendChild(el);
+    });
+
+    // 2. AI 최적 추천 구장
+    formConfig.slots.forEach(slot => {
+        const el = document.createElement('div');
+        el.className = 'pitch-slot';
+        el.style.left = `${slot.x}%`;
+        el.style.top = `${slot.y}%`;
+
+        const p = players.find(item => item.id === aiMap[slot.slotId]);
+        const posClass = getPosCategory(slot.role);
+        if (p) {
+            const isNatural = (p.positions || []).includes(slot.role);
+            el.innerHTML = `
+                <div class="slot-token" style="${isNatural ? 'border-color:#ffd56b;' : ''}">
+                    <span class="slot-role-badge ${posClass}">${slot.label}</span>
+                    <span class="slot-ovr-badge">${p.ovr}</span>
+                    <span class="slot-number">${p.back_number}</span>
+                </div>
+                <div class="slot-name-plate">${p.name}</div>
+            `;
+            el.onclick = () => selectPlayer(p);
+        } else {
+            el.innerHTML = `
+                <div class="slot-token empty">
+                    <span class="slot-role-badge ${posClass}">${slot.label}</span>
+                </div>
+                <div class="slot-name-plate">-</div>
+            `;
+        }
+        aiDualSlotsLayer.appendChild(el);
+    });
+
+    // 전력 비교 계산
+    const getStatsSummary = (map) => {
+        const list = formConfig.slots.map(s => players.find(p => p.id === map[s.slotId])).filter(Boolean);
+        if (list.length === 0) return { ovr: 0, total: 0, pac: 0, phy: 0, count: 0 };
+        const n = list.length;
+        return {
+            ovr: Math.round(list.reduce((acc, p) => acc + (p.ovr || 70), 0) / n),
+            total: list.reduce((acc, p) => acc + calcPlayerTotal(p), 0),
+            pac: Math.round(list.reduce((acc, p) => acc + ((p.stats && p.stats.pac) || 70), 0) / n),
+            phy: Math.round(list.reduce((acc, p) => acc + ((p.stats && p.stats.phy) || 70), 0) / n),
+            count: n
+        };
+    };
+
+    const userStats = getStatsSummary(userMap);
+    const aiStats = getStatsSummary(aiMap);
+
+    dualUserOvr.textContent = `OVR ${userStats.ovr}`;
+    dualUserTotal.textContent = `총점 ${userStats.total.toLocaleString()}점 (${userStats.count}/11명)`;
+    colUserStats.textContent = `평균 주력: ${userStats.pac} | 평균 체력: ${userStats.phy}`;
+
+    dualAiOvr.textContent = `OVR ${aiStats.ovr}`;
+    dualAiTotal.textContent = `총점 ${aiStats.total.toLocaleString()}점 (${aiStats.count}/11명)`;
+    colAiStats.textContent = `평균 주력: ${aiStats.pac} | 평균 체력: ${aiStats.phy}`;
+
+    const diffOvr = aiStats.ovr - userStats.ovr;
+    const diffTot = aiStats.total - userStats.total;
+    if (diffOvr > 0) {
+        vsStatsDiff.innerHTML = `AI 라인업이 팀 OVR <b>+${diffOvr}</b> (총점 +${diffTot}점) 더 높습니다`;
+    } else if (diffOvr === 0) {
+        vsStatsDiff.innerHTML = `감독님 배치와 AI 추천의 종합 OVR이 <b>동일(${userStats.ovr})</b>합니다!`;
+    } else {
+        vsStatsDiff.innerHTML = `감독님 배치가 AI 추천보다 팀 OVR <b>+${Math.abs(diffOvr)}</b> 더 우수합니다!`;
+    }
+}
+
 function renderInspector() {
     if (!selectedPlayer) return;
 
     cardOvr.textContent = selectedPlayer.ovr || 75;
     cardPos.textContent = selectedPlayer.position || 'CM';
+
+    const posList = selectedPlayer.positions || [selectedPlayer.position || 'CM'];
+    const subPositions = posList.slice(1);
+    cardMultiPos.textContent = subPositions.length > 0 ? subPositions.join(' / ') : '단일 포지션';
+
     cardName.textContent = selectedPlayer.name || '선수';
     cardDept.textContent = selectedPlayer.department || '부산시청';
     cardNumber.textContent = `#${selectedPlayer.back_number || 0}`;
@@ -369,6 +503,7 @@ function renderInspector() {
 
     detailTotalScore.textContent = `${total}점`;
     detailOvr.textContent = selectedPlayer.ovr || 75;
+    detailPositions.textContent = posList.join(', ');
     detailFoot.textContent = selectedPlayer.foot || '오른발';
     detailAge.textContent = `${selectedPlayer.age || 30}세`;
     detailNotes.textContent = selectedPlayer.notes || '등록된 감독 메모가 없습니다.';
@@ -381,14 +516,12 @@ function renderInspector() {
     }
 }
 
-// 선수 선택 시
 function selectPlayer(player) {
     selectedPlayer = player;
     renderInspector();
     highlightSquadItem(player.id);
 }
 
-// 스쿼드 리스트 렌더링
 function renderSquadList() {
     totalPlayerCount.textContent = players.length;
     const query = (playerSearchInput.value || '').trim().toLowerCase();
@@ -399,15 +532,16 @@ function renderSquadList() {
     const filtered = players.filter(p => {
         const matchesQuery = !query || p.name.toLowerCase().includes(query) || p.department.toLowerCase().includes(query);
         let matchesFilter = true;
-        if (activeFilter === 'FW') matchesFilter = ['ST', 'CF', 'LW', 'RW'].includes(p.position);
-        else if (activeFilter === 'MF') matchesFilter = ['CAM', 'CM', 'CDM', 'LM', 'RM'].includes(p.position);
-        else if (activeFilter === 'DF') matchesFilter = ['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(p.position);
-        else if (activeFilter === 'GK') matchesFilter = p.position === 'GK';
+        const posArr = p.positions || [p.position];
+        if (activeFilter === 'FW') matchesFilter = posArr.some(pos => ['ST', 'CF', 'LW', 'RW'].includes(pos));
+        else if (activeFilter === 'MF') matchesFilter = posArr.some(pos => ['CAM', 'CM', 'CDM', 'LM', 'RM'].includes(pos));
+        else if (activeFilter === 'DF') matchesFilter = posArr.some(pos => ['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos));
+        else if (activeFilter === 'GK') matchesFilter = posArr.includes('GK');
         return matchesQuery && matchesFilter;
     });
 
     if (filtered.length === 0) {
-        squadListContainer.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">해당 조건의 선수가 없습니다.</div>';
+        squadListContainer.innerHTML = '<div style="padding:15px;text-align:center;color:var(--text-muted);font-size:11px;">해당 조건의 선수가 없습니다.</div>';
         return;
     }
 
@@ -417,13 +551,14 @@ function renderSquadList() {
         item.dataset.id = p.id;
         const posClass = getPosCategory(p.position);
         const tot = calcPlayerTotal(p);
+        const posDisplay = (p.positions || [p.position]).join('/');
 
         item.innerHTML = `
             <div class="squad-item-left">
                 <span class="squad-item-num">#${p.back_number}</span>
                 <div class="squad-item-info">
                     <span class="squad-item-name">${p.name}</span>
-                    <span class="squad-item-dept">${p.department} (${p.foot}, ${p.age}세)</span>
+                    <span class="squad-item-dept">${p.department} (${posDisplay})</span>
                 </div>
             </div>
             <div class="squad-item-right">
@@ -445,7 +580,6 @@ function highlightSquadItem(playerId) {
     });
 }
 
-// 팀 전력 지표 계산
 function updateTeamMetrics() {
     const curFormationKey = tactics.currentFormation || '4-3-3';
     const formConfig = tactics.formations[curFormationKey];
@@ -534,7 +668,6 @@ async function handleDrop(e) {
     }
 }
 
-// 슬롯 선택 모달 열기
 function openSlotSelectModal(slot) {
     selectedSlotId = slot.slotId;
     slotTargetInfo.textContent = `선택한 위치: [${slot.label}] (${slot.role} 역할)`;
@@ -545,8 +678,10 @@ function openSlotSelectModal(slot) {
     slotCandidateList.innerHTML = '';
 
     const sorted = [...players].sort((a, b) => {
-        const aMatch = a.position === slot.role ? 1 : 0;
-        const bMatch = b.position === slot.role ? 1 : 0;
+        const aPositions = a.positions || [a.position];
+        const bPositions = b.positions || [b.position];
+        const aMatch = aPositions.includes(slot.role) ? 1 : 0;
+        const bMatch = bPositions.includes(slot.role) ? 1 : 0;
         if (aMatch !== bMatch) return bMatch - aMatch;
         return (calcPlayerTotal(b)) - (calcPlayerTotal(a));
     });
@@ -555,22 +690,24 @@ function openSlotSelectModal(slot) {
         const item = document.createElement('div');
         const isCurrent = p.id === currentAssignedId;
         const isAlreadyStarting = Object.values(startingMap).includes(p.id) && !isCurrent;
+        const isNatural = (p.positions || [p.position]).includes(slot.role);
 
         item.className = `slot-candidate-item ${isAlreadyStarting ? 'already-starting' : ''}`;
         const posClass = getPosCategory(p.position);
         const tot = calcPlayerTotal(p);
+        const posDisplay = (p.positions || [p.position]).join('/');
 
         item.innerHTML = `
             <div>
-                <span class="badge ${posClass}" style="padding:2px 6px;border-radius:4px;font-size:10px;color:#fff;">${p.position}</span>
-                <strong style="margin-left:6px;font-size:13px;color:#fff;">#${p.back_number} ${p.name}</strong>
-                <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">(${p.department})</span>
-                ${isCurrent ? '<span style="color:var(--accent-gold);font-size:11px;font-weight:bold;margin-left:6px;">[현재 배치됨]</span>' : ''}
-                ${isAlreadyStarting ? '<span style="color:#8a99b5;font-size:11px;margin-left:6px;">[다른 포지션 선발]</span>' : ''}
+                <span class="badge ${posClass}" style="padding:2px 5px;border-radius:3px;font-size:9px;color:#fff;">${posDisplay}</span>
+                <strong style="margin-left:5px;font-size:12px;color:#fff;">#${p.back_number} ${p.name}</strong>
+                <span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(${p.department})</span>
+                ${isNatural ? '<span style="color:#2ecc71;font-size:10px;font-weight:bold;margin-left:4px;">[포지션 일치]</span>' : ''}
+                ${isCurrent ? '<span style="color:var(--accent-gold);font-size:10px;font-weight:bold;margin-left:4px;">[현재 배치됨]</span>' : ''}
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;">
-                <span style="font-size:11px;font-weight:700;color:var(--accent-gold-light);">${tot}점</span>
-                <span style="font-size:15px;font-weight:900;color:var(--accent-gold);">${p.ovr}</span>
+                <span style="font-size:10px;font-weight:700;color:var(--accent-gold-light);">${tot}점</span>
+                <span style="font-size:13px;font-weight:900;color:var(--accent-gold);">${p.ovr}</span>
             </div>
         `;
 
@@ -593,7 +730,6 @@ function openSlotSelectModal(slot) {
     slotSelectModal.style.display = 'flex';
 }
 
-// 전술 저장
 async function saveTacticsToServer() {
     try {
         await fetch('/api/tactics', {
@@ -606,7 +742,6 @@ async function saveTacticsToServer() {
     }
 }
 
-// 선수 모달 실시간 슬라이더 OVR 및 총점 계산
 function updateFormOvrPreview() {
     const pac = parseInt(sliderPac.value);
     const sho = parseInt(sliderSho.value);
@@ -614,7 +749,7 @@ function updateFormOvrPreview() {
     const dri = parseInt(sliderDri.value);
     const def = parseInt(sliderDef.value);
     const phy = parseInt(sliderPhy.value);
-    const pos = formPosition.value;
+    const pos = formPos1.value;
 
     valPac.textContent = pac;
     valSho.textContent = sho;
@@ -649,19 +784,22 @@ function updateFormOvrPreview() {
     formPreviewOvr.textContent = Math.round(ovr);
 }
 
-// 선수 등록/수정 모달 열기
 function openPlayerModal(playerToEdit = null) {
     playerForm.reset();
     if (playerToEdit) {
-        modalTitle.textContent = '선수 정보 & 능력치 수정';
+        modalTitle.textContent = '선수 정보 & 능력치 (포지션 최대 3개)';
         document.getElementById('formPlayerId').value = playerToEdit.id;
         document.getElementById('formBackNumber').value = playerToEdit.back_number;
         document.getElementById('formName').value = playerToEdit.name;
         document.getElementById('formDepartment').value = playerToEdit.department;
         document.getElementById('formAge').value = playerToEdit.age || 30;
-        document.getElementById('formPosition').value = playerToEdit.position;
         document.getElementById('formFoot').value = playerToEdit.foot || '오른발';
         document.getElementById('formNotes').value = playerToEdit.notes || '';
+
+        const posList = playerToEdit.positions || [playerToEdit.position || 'CM'];
+        formPos1.value = posList[0] || 'CM';
+        formPos2.value = posList[1] || '';
+        formPos3.value = posList[2] || '';
 
         const s = playerToEdit.stats || {};
         sliderPac.value = s.pac || 75;
@@ -671,10 +809,13 @@ function openPlayerModal(playerToEdit = null) {
         sliderDef.value = s.def || 75;
         sliderPhy.value = s.phy || 75;
     } else {
-        modalTitle.textContent = '신규 선수 등록 & 육각형 설정';
+        modalTitle.textContent = '신규 선수 등록 & 육각형 설정 (포지션 최대 3개)';
         document.getElementById('formPlayerId').value = '';
         document.getElementById('formBackNumber').value = players.length + 1;
         document.getElementById('formAge').value = 32;
+        formPos1.value = 'CM';
+        formPos2.value = '';
+        formPos3.value = '';
         sliderPac.value = 75;
         sliderSho.value = 75;
         sliderPas.value = 75;
@@ -686,8 +827,42 @@ function openPlayerModal(playerToEdit = null) {
     playerModal.style.display = 'flex';
 }
 
-// 이벤트 리스너 등록
 function setupEventListeners() {
+    // 뷰 모드 전환 (단일 상세 뷰 vs 감독-AI 동시 비교 뷰)
+    btnViewSingle.addEventListener('click', () => {
+        currentViewMode = 'single';
+        btnViewSingle.classList.add('active');
+        btnViewDual.classList.remove('active');
+        singleViewLayout.style.display = 'grid';
+        singleMetricsBar.style.display = 'flex';
+        dualCompareLayout.style.display = 'none';
+        renderAll();
+    });
+
+    btnViewDual.addEventListener('click', () => {
+        currentViewMode = 'dual';
+        btnViewDual.classList.add('active');
+        btnViewSingle.classList.remove('active');
+        singleViewLayout.style.display = 'none';
+        singleMetricsBar.style.display = 'none';
+        dualCompareLayout.style.display = 'flex';
+        renderDualView();
+    });
+
+    // AI 추천을 감독 라인업으로 복사 적용
+    btnApplyAiToUser.addEventListener('click', async () => {
+        if (!aiRecommendedLineup || Object.keys(aiRecommendedLineup).length === 0) {
+            alert('AI 추천 라인업이 아직 생성되지 않았습니다.');
+            return;
+        }
+        if (confirm('AI가 추천한 최적 라인업을 감독님의 라인업으로 그대로 적용하시겠습니까?')) {
+            tactics.starting11 = { ...aiRecommendedLineup };
+            await saveTacticsToServer();
+            renderAll();
+            alert('AI 추천 라인업이 감독님 라인업으로 완벽하게 적용되었습니다!');
+        }
+    });
+
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             tabBtns.forEach(b => b.classList.remove('active'));
@@ -700,6 +875,7 @@ function setupEventListeners() {
     formationSelect.addEventListener('change', async (e) => {
         tactics.currentFormation = e.target.value;
         await saveTacticsToServer();
+        await fetchAiRecommendation();
         renderAll();
     });
 
@@ -712,7 +888,7 @@ function setupEventListeners() {
         });
     });
 
-    [sliderPac, sliderSho, sliderPas, sliderDri, sliderDef, sliderPhy, formPosition].forEach(el => {
+    [sliderPac, sliderSho, sliderPas, sliderDri, sliderDef, sliderPhy, formPos1].forEach(el => {
         el.addEventListener('input', updateFormOvrPreview);
     });
 
@@ -752,13 +928,16 @@ function setupEventListeners() {
         const def = parseInt(sliderDef.value);
         const phy = parseInt(sliderPhy.value);
 
+        const positions = [formPos1.value, formPos2.value, formPos3.value].filter(Boolean);
+
         const payload = {
             id: playerId || null,
             back_number: parseInt(document.getElementById('formBackNumber').value),
             name: document.getElementById('formName').value.trim(),
             department: document.getElementById('formDepartment').value.trim(),
             age: parseInt(document.getElementById('formAge').value),
-            position: document.getElementById('formPosition').value,
+            positions: positions,
+            position: positions[0] || 'CM',
             foot: document.getElementById('formFoot').value,
             notes: document.getElementById('formNotes').value.trim(),
             stats: { pac, sho, pas, dri, def, phy },
@@ -783,30 +962,30 @@ function setupEventListeners() {
     });
 
     btnExportImage.addEventListener('click', async () => {
-        const captureArea = document.getElementById('captureArea');
-        const watermark = captureArea.querySelector('.capture-watermark');
-        watermark.style.display = 'flex';
+        const captureTarget = currentViewMode === 'dual' ? dualCompareLayout : document.getElementById('captureArea');
+        const watermark = captureTarget.querySelector?.('.capture-watermark');
+        if (watermark) watermark.style.display = 'flex';
 
         btnExportImage.disabled = true;
         btnExportImage.textContent = '📸 생성 중...';
 
         try {
-            const canvas = await html2canvas(captureArea, {
+            const canvas = await html2canvas(captureTarget, {
                 backgroundColor: '#0f1626',
                 scale: 2,
                 logging: false
             });
             const link = document.createElement('a');
-            link.download = `부산시청_축구회_${tactics.currentFormation}_라인업.png`;
+            link.download = `부산시청_축구회_${tactics.currentFormation}_${currentViewMode === 'dual' ? '동시비교' : '라인업'}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (err) {
             console.error('이미지 저장 오류:', err);
             alert('이미지 생성에 실패했습니다.');
         } finally {
-            watermark.style.display = 'none';
+            if (watermark) watermark.style.display = 'none';
             btnExportImage.disabled = false;
-            btnExportImage.textContent = '📸 라인업 이미지 저장';
+            btnExportImage.textContent = '📸 이미지 저장';
         }
     });
 
@@ -832,7 +1011,7 @@ function setupEventListeners() {
             });
             const data = await res.json();
             if (data.success) {
-                alert(`총 ${data.count}명의 선수와 점수가 성공적으로 등록되었습니다!`);
+                alert(`총 ${data.count}명의 선수(최대 3개 포지션)와 점수가 성공적으로 등록되었습니다!`);
                 await loadData();
             } else {
                 alert('엑셀 가져오기 실패: ' + (data.error || '알 수 없는 오류'));

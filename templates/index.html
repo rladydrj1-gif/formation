@@ -20,9 +20,19 @@
                 <p class="subtitle">시도별 공무원 전국 축구대회 승리 대비 선수 분석 및 라인업 시스템</p>
             </div>
         </div>
+
         <div class="header-center">
+            <div class="view-mode-group">
+                <button id="btnViewSingle" class="view-btn active" title="선수 상세 프로필과 단일 구장을 봅니다">
+                    🏟️ 단일 상세 뷰
+                </button>
+                <button id="btnViewDual" class="view-btn" title="감독 직접 배치와 AI 추천 배치를 한 화면에서 동시에 비교합니다">
+                    ⚡ 감독 vs AI 동시 비교 뷰
+                </button>
+            </div>
+
             <div class="formation-selector-wrapper">
-                <label for="formationSelect">📋 전술 포메이션:</label>
+                <label for="formationSelect">📋 전술:</label>
                 <select id="formationSelect" class="custom-select">
                     <option value="4-3-3">4-3-3 (공격형)</option>
                     <option value="4-4-2">4-4-2 (클래식 밸런스)</option>
@@ -32,15 +42,16 @@
                 </select>
             </div>
         </div>
+
         <div class="header-right">
             <button id="btnExportImage" class="btn btn-primary" title="현재 포메이션을 이미지로 저장합니다">
-                📸 라인업 이미지 저장
+                📸 이미지 저장
             </button>
-            <button id="btnExportExcel" class="btn btn-success" title="선수단 명단 및 점수(총점 수식 포함) 엑셀을 다운로드합니다">
-                📥 엑셀 명단/양식 받기
+            <button id="btnExportExcel" class="btn btn-success" title="3개 포지션 및 총점 수식이 포함된 엑셀 명단을 다운로드합니다">
+                📥 엑셀 받기
             </button>
             <button id="btnImportExcel" class="btn btn-secondary" title="작성한 엑셀 파일로 선수 점수를 일괄 등록합니다">
-                📤 엑셀 일괄 가져오기
+                📤 엑셀 가져오기
             </button>
             <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display:none;">
             <button id="btnResetDefault" class="btn btn-outline-danger" title="초기 기본 선수단 및 포메이션으로 복원">
@@ -49,10 +60,10 @@
         </div>
     </header>
 
-    <!-- 팀 스쿼드 종합 전력 바 -->
-    <section class="team-metrics-bar">
+    <!-- 팀 스쿼드 종합 전력 바 (단일 뷰용) -->
+    <section class="team-metrics-bar" id="singleMetricsBar">
         <div class="metric-card highlight">
-            <span class="metric-label">팀 종합 평점</span>
+            <span class="metric-label">감독 선발 평점</span>
             <span class="metric-value" id="teamOvr">--</span>
         </div>
         <div class="metric-card highlight-gold">
@@ -89,82 +100,65 @@
         </div>
     </section>
 
-    <!-- 메인 워크스페이스 -->
-    <main class="main-layout">
+    <!-- ================= 1. 단일 상세 뷰 (기본 화면) ================= -->
+    <main class="main-layout" id="singleViewLayout">
         <!-- 좌측: 그라운드 전술 보드 & 벤치 -->
         <section class="pitch-section">
             <div class="pitch-header">
                 <div class="pitch-title">
                     <h3>🏟️ 스타팅 11 전술 필드 <span id="currentFormationLabel" class="badge-formation">4-3-3</span></h3>
-                    <span class="pitch-hint">* 선수를 클릭하여 교체하거나 드래그하여 자리를 맞바꿀 수 있습니다.</span>
+                    <span class="pitch-hint">* 선수를 클릭하여 교체하거나 드래그하여 자리를 맞바꿀 수 있습니다. (선수당 최대 3개 포지션 지원)</span>
                 </div>
                 <div class="pitch-actions">
                     <button id="btnClearLineup" class="btn btn-sm btn-outline-light">선발 비우기</button>
                 </div>
             </div>
 
-            <!-- 캡처 대상 컨테이너 -->
             <div id="captureArea" class="capture-container">
-                <!-- 캡처용 타이틀 워터마크 -->
                 <div class="capture-watermark">
                     <span class="watermark-team">부산시청 축구회 (BUSAN CITY HALL FC)</span>
                     <span class="watermark-formation" id="watermarkFormation">4-3-3 FORMATION</span>
                 </div>
 
-                <!-- 축구 필드 잔디 보드 -->
                 <div class="football-pitch" id="pitchBoard">
-                    <!-- 경기장 라인 마킹 -->
                     <div class="pitch-lines">
                         <div class="line-touch-top"></div>
                         <div class="line-penalty-box top"></div>
                         <div class="line-goal-box top"></div>
                         <div class="line-penalty-spot top"></div>
                         <div class="line-penalty-arc top"></div>
-
                         <div class="line-halfway"></div>
                         <div class="circle-center"></div>
                         <div class="spot-center"></div>
-
                         <div class="line-penalty-box bottom"></div>
                         <div class="line-goal-box bottom"></div>
                         <div class="line-penalty-spot bottom"></div>
                         <div class="line-penalty-arc bottom"></div>
                         <div class="line-touch-bottom"></div>
-
-                        <div class="pitch-corner top-left"></div>
-                        <div class="pitch-corner top-right"></div>
-                        <div class="pitch-corner bottom-left"></div>
-                        <div class="pitch-corner bottom-right"></div>
                     </div>
-
-                    <!-- 슬롯 동적 생성 영역 -->
                     <div id="slotsLayer" class="slots-layer"></div>
                 </div>
 
-                <!-- 벤치 후보 선수 목록 -->
                 <div class="bench-container">
                     <div class="bench-header">
                         <h4>🪑 교체 후보 (SUBSTITUTES)</h4>
                         <span class="bench-count" id="benchCountBadge">0명</span>
                     </div>
-                    <div id="benchPlayersList" class="bench-players-list">
-                        <!-- 벤치 선수 칩 동적 렌더링 -->
-                    </div>
+                    <div id="benchPlayersList" class="bench-players-list"></div>
                 </div>
             </div>
         </section>
 
-        <!-- 우측: 선수 상세 분석(FIFA 카드 + 육각형) & 스쿼드 관리 탭 -->
+        <!-- 우측: 선수 상세 분석 & 스쿼드 관리 탭 -->
         <section class="sidebar-section">
             <div class="sidebar-tabs">
                 <button class="tab-btn active" data-tab="tab-analysis">🎯 육각형 분석 & 프로필</button>
                 <button class="tab-btn" data-tab="tab-squad">👥 선수단 명단 (<span id="totalPlayerCount">0</span>명)</button>
             </div>
 
-            <!-- 탭 1: 육각형 능력치 분석 및 FIFA 카드 뷰 -->
+            <!-- 탭 1: 분석 및 프로필 -->
             <div id="tab-analysis" class="tab-content active">
                 <div class="inspector-container">
-                    <!-- FIFA 얼티밋 카드 뷰 -->
                     <div class="fifa-card-wrapper">
                         <div class="fifa-card" id="fifaCardDisplay">
                             <div class="card-glow"></div>
@@ -172,6 +166,7 @@
                                 <div class="card-rating-group">
                                     <div class="card-ovr" id="cardOvr">85</div>
                                     <div class="card-pos" id="cardPos">CAM</div>
+                                    <div class="card-multi-pos" id="cardMultiPos">CM / ST</div>
                                     <div class="card-flag" title="대한민국">🇰🇷</div>
                                     <div class="card-club-badge" title="부산시청">🏛️</div>
                                 </div>
@@ -203,33 +198,32 @@
                         </div>
                     </div>
 
-                    <!-- 육각형 레이더 차트 영역 -->
                     <div class="radar-chart-card">
                         <div class="radar-header">
                             <h4>선수 6각형 능력치 밸런스</h4>
-                            <span id="playerStyleTag" class="badge-playstyle">완성형 육각형 미드필더</span>
+                            <span id="playerStyleTag" class="badge-playstyle">완성형 육각형</span>
                         </div>
                         <div class="radar-canvas-wrap">
                             <canvas id="radarChartCanvas"></canvas>
                         </div>
-                        <!-- 선수 세부 메모 및 버튼 -->
                         <div class="player-summary-box">
                             <div class="info-row">
-                                <span>총점: <b id="detailTotalScore" style="color:var(--accent-gold);font-size:13px;">492점</b></span>
+                                <span>총점: <b id="detailTotalScore" style="color:var(--accent-gold);">492점</b></span>
                                 <span>종합 OVR: <b id="detailOvr">85</b></span>
+                                <span>가능 포지션: <b id="detailPositions" style="color:#79b5ff;">CAM, CM, ST</b></span>
                                 <span>주발: <b id="detailFoot">오른발</b></span>
                                 <span>나이: <b id="detailAge">38세</b></span>
                             </div>
                             <p class="player-notes" id="detailNotes">축구회 주장 및 중원 플레이메이커. 경기 조율 및 날카로운 킬패스 탁월</p>
                         </div>
                         <div class="inspector-actions">
-                            <button id="btnEditCurrentPlayer" class="btn btn-sm btn-primary">✏️ 능력치/정보 수정</button>
+                            <button id="btnEditCurrentPlayer" class="btn btn-sm btn-primary">✏️ 능력치/포지션 수정</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 탭 2: 전체 선수단 명단 관리 -->
+            <!-- 탭 2: 전체 선수단 명단 -->
             <div id="tab-squad" class="tab-content">
                 <div class="squad-controls">
                     <input type="text" id="playerSearchInput" class="input-search" placeholder="선수명 / 부서 검색...">
@@ -243,18 +237,91 @@
                     <button id="btnAddNewPlayer" class="btn btn-primary btn-block">➕ 신규 선수 등록</button>
                 </div>
 
-                <div class="squad-list-scroll" id="squadListContainer">
-                    <!-- 선수 카드 리스트 동적 렌더링 -->
-                </div>
+                <div class="squad-list-scroll" id="squadListContainer"></div>
             </div>
         </section>
     </main>
 
-    <!-- 선수 등록/수정 모달 -->
+    <!-- ================= 2. 감독 vs AI 동시 비교 뷰 (듀얼 화면) ================= -->
+    <main class="dual-compare-layout" id="dualCompareLayout" style="display:none;">
+        <!-- 중앙 상단 비교 브리핑 배너 -->
+        <section class="compare-summary-banner">
+            <div class="compare-badge user">
+                <span class="label">👤 감독님 직접 배치</span>
+                <span class="value" id="dualUserOvr">OVR 83</span>
+                <span class="sub" id="dualUserTotal">총점 5,420점</span>
+            </div>
+
+            <div class="compare-vs-center">
+                <div class="vs-circle">VS</div>
+                <div class="vs-stats-diff" id="vsStatsDiff">
+                    <span>AI 라인업이 팀 OVR <b>+2</b> 더 높습니다</span>
+                </div>
+                <button id="btnApplyAiToUser" class="btn btn-sm btn-primary" title="AI가 추천한 배치를 감독님 라인업으로 그대로 복사합니다">
+                    ✨ AI 추천을 내 라인업으로 적용
+                </button>
+            </div>
+
+            <div class="compare-badge ai">
+                <span class="label">🤖 AI 최적 추천 배치</span>
+                <span class="value" id="dualAiOvr">OVR 85</span>
+                <span class="sub" id="dualAiTotal">총점 5,490점</span>
+            </div>
+        </section>
+
+        <!-- 2개 구장 좌우 나란히 배치 영역 -->
+        <div class="dual-pitches-container">
+            <!-- 좌측 구장: 감독 직접 배치 -->
+            <div class="dual-pitch-column">
+                <div class="dual-column-header user">
+                    <h4>👤 감독님 직접 배치 필드 <span class="badge-role-tag">직접 수정 가능</span></h4>
+                    <span class="col-stats" id="colUserStats">평균 주력: 82 | 체력: 81</span>
+                </div>
+                <div class="football-pitch dual" id="userDualPitch">
+                    <div class="pitch-lines">
+                        <div class="line-touch-top"></div>
+                        <div class="line-penalty-box top"></div>
+                        <div class="line-goal-box top"></div>
+                        <div class="line-halfway"></div>
+                        <div class="circle-center"></div>
+                        <div class="spot-center"></div>
+                        <div class="line-penalty-box bottom"></div>
+                        <div class="line-goal-box bottom"></div>
+                        <div class="line-touch-bottom"></div>
+                    </div>
+                    <div id="userDualSlotsLayer" class="slots-layer"></div>
+                </div>
+            </div>
+
+            <!-- 우측 구장: AI 추천 최적 배치 -->
+            <div class="dual-pitch-column">
+                <div class="dual-column-header ai">
+                    <h4>🤖 AI 최적 추천 배치 필드 <span class="badge-role-tag gold">3개 포지션 기반 자동 최적화</span></h4>
+                    <span class="col-stats" id="colAiStats">평균 주력: 84 | 체력: 83</span>
+                </div>
+                <div class="football-pitch dual" id="aiDualPitch">
+                    <div class="pitch-lines">
+                        <div class="line-touch-top"></div>
+                        <div class="line-penalty-box top"></div>
+                        <div class="line-goal-box top"></div>
+                        <div class="line-halfway"></div>
+                        <div class="circle-center"></div>
+                        <div class="spot-center"></div>
+                        <div class="line-penalty-box bottom"></div>
+                        <div class="line-goal-box bottom"></div>
+                        <div class="line-touch-bottom"></div>
+                    </div>
+                    <div id="aiDualSlotsLayer" class="slots-layer"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 선수 등록/수정 모달 (최대 3개 포지션 선택 가능) -->
     <div id="playerModal" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">
-                <h3 id="modalTitle">선수 등록 / 능력치 설정</h3>
+                <h3 id="modalTitle">선수 정보 & 능력치 (포지션 최대 3개)</h3>
                 <button class="modal-close" id="btnClosePlayerModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -273,39 +340,75 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-6">
+                        <div class="form-group col-4">
                             <label for="formDepartment">소속 부서(과) *</label>
                             <input type="text" id="formDepartment" class="form-control" placeholder="예: 체육진흥과" required>
                         </div>
-                        <div class="form-group col-6">
+                        <div class="form-group col-4">
                             <label for="formAge">나이</label>
                             <input type="number" id="formAge" class="form-control" min="18" max="65" value="32">
                         </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-6">
-                            <label for="formPosition">주 포지션 *</label>
-                            <select id="formPosition" class="form-control">
-                                <option value="ST">ST (스트라이커)</option>
-                                <option value="LW">LW (좌측 윙어)</option>
-                                <option value="RW">RW (우측 윙어)</option>
-                                <option value="CAM">CAM (공격형 미드필더)</option>
-                                <option value="CM">CM (중앙 미드필더)</option>
-                                <option value="CDM">CDM (수비형 미드필더)</option>
-                                <option value="LB">LB (좌측 풀백)</option>
-                                <option value="CB">CB (센터백)</option>
-                                <option value="RB">RB (우측 풀백)</option>
-                                <option value="GK">GK (골키퍼)</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-6">
+                        <div class="form-group col-4">
                             <label for="formFoot">주발</label>
                             <select id="formFoot" class="form-control">
                                 <option value="오른발">오른발</option>
                                 <option value="왼발">왼발</option>
                                 <option value="양발">양발</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <!-- 3개 포지션 선택 영역 -->
+                    <div class="form-positions-box">
+                        <label class="section-label">⚽ 소화 가능 포지션 설정 (최대 3개까지 선택)</label>
+                        <div class="form-row">
+                            <div class="form-group col-4">
+                                <label for="formPos1">1순위 (주포지션) *</label>
+                                <select id="formPos1" class="form-control" required>
+                                    <option value="ST">ST (스트라이커)</option>
+                                    <option value="LW">LW (좌측 윙어)</option>
+                                    <option value="RW">RW (우측 윙어)</option>
+                                    <option value="CAM">CAM (공격형 미드필더)</option>
+                                    <option value="CM">CM (중앙 미드필더)</option>
+                                    <option value="CDM">CDM (수비형 미드필더)</option>
+                                    <option value="LB">LB (좌측 풀백)</option>
+                                    <option value="CB">CB (센터백)</option>
+                                    <option value="RB">RB (우측 풀백)</option>
+                                    <option value="GK">GK (골키퍼)</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-4">
+                                <label for="formPos2">2순위 (부포지션)</label>
+                                <select id="formPos2" class="form-control">
+                                    <option value="">(선택 안함)</option>
+                                    <option value="ST">ST (스트라이커)</option>
+                                    <option value="LW">LW (좌측 윙어)</option>
+                                    <option value="RW">RW (우측 윙어)</option>
+                                    <option value="CAM">CAM (공격형 미드필더)</option>
+                                    <option value="CM">CM (중앙 미드필더)</option>
+                                    <option value="CDM">CDM (수비형 미드필더)</option>
+                                    <option value="LB">LB (좌측 풀백)</option>
+                                    <option value="CB">CB (센터백)</option>
+                                    <option value="RB">RB (우측 풀백)</option>
+                                    <option value="GK">GK (골키퍼)</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-4">
+                                <label for="formPos3">3순위 (부포지션)</label>
+                                <select id="formPos3" class="form-control">
+                                    <option value="">(선택 안함)</option>
+                                    <option value="ST">ST (스트라이커)</option>
+                                    <option value="LW">LW (좌측 윙어)</option>
+                                    <option value="RW">RW (우측 윙어)</option>
+                                    <option value="CAM">CAM (공격형 미드필더)</option>
+                                    <option value="CM">CM (중앙 미드필더)</option>
+                                    <option value="CDM">CDM (수비형 미드필더)</option>
+                                    <option value="LB">LB (좌측 풀백)</option>
+                                    <option value="CB">CB (센터백)</option>
+                                    <option value="RB">RB (우측 풀백)</option>
+                                    <option value="GK">GK (골키퍼)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -370,7 +473,7 @@
 
                     <div class="form-group">
                         <label for="formNotes">선수 특징 및 감독 메모</label>
-                        <textarea id="formNotes" class="form-control" rows="2" placeholder="예: 후반 조커 투입 적합, 프리킥 전담, 체력 안배 필요 등"></textarea>
+                        <textarea id="formNotes" class="form-control" rows="2" placeholder="예: 후반 조커 투입 적합, 프리킥 전담 등"></textarea>
                     </div>
 
                     <div class="modal-footer">
@@ -391,9 +494,7 @@
             </div>
             <div class="modal-body">
                 <p class="slot-target-info" id="slotTargetInfo">선택한 위치: [ST]</p>
-                <div class="slot-candidate-list" id="slotCandidateList">
-                    <!-- 후보 선수 목록 -->
-                </div>
+                <div class="slot-candidate-list" id="slotCandidateList"></div>
             </div>
             <div class="modal-footer">
                 <button id="btnRemoveSlotPlayer" class="btn btn-outline-danger">이 자리 비우기</button>
